@@ -32,7 +32,11 @@ class KroVocabApp {
     this.quizIndex = 0;
     this.quizScore = 0;
     this.quizTimer = null;
-    this.quizTimeLeft = 15;
+    this.quizActive = false;
+    this.quizQuestionActive = false;
+    this.quizRemainingMs = 15000;
+    this.quizTimerStart = null;
+    this.quizCurrentItem = null;
 
     // Match State
     this.matchTiles = [];
@@ -261,9 +265,39 @@ class KroVocabApp {
 
       case 'repeat':
       case 'wrong': {
-        // Sanfter, freundlicher Doppel-Boop (kein harter Summer, sondern cutes "Hoppla!")
-        playNote(349.23, 0, 0.09, 0.11, 'sine'); // F4
-        playNote(261.63, 0.06, 0.13, 0.09, 'sine'); // C4
+        // Cuter, unverkennbarer "Uh-Oh / Boing-Down" Sound:
+        // Deutlich tiefere Tonlage & sanft nach unten gleitende Tonhöhe (womp-womp)
+        try {
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(310, now);
+          osc1.frequency.exponentialRampToValueAtTime(210, now + 0.12);
+
+          gain1.gain.setValueAtTime(0.0001, now);
+          gain1.gain.linearRampToValueAtTime(0.18, now + 0.01);
+          gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+
+          osc1.connect(gain1);
+          gain1.connect(ctx.destination);
+          osc1.start(now);
+          osc1.stop(now + 0.13);
+
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(210, now + 0.10);
+          osc2.frequency.exponentialRampToValueAtTime(140, now + 0.25);
+
+          gain2.gain.setValueAtTime(0.0001, now + 0.10);
+          gain2.gain.linearRampToValueAtTime(0.18, now + 0.11);
+          gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.26);
+
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start(now + 0.10);
+          osc2.stop(now + 0.26);
+        } catch (e) {}
         break;
       }
 
@@ -595,6 +629,20 @@ class KroVocabApp {
     this.elements.btnRestartMatch.addEventListener('click', () => {
       this.initMatchGame();
     });
+
+    // App/Tab im Hintergrund -> Timer pausieren & bei Rückkehr fortsetzen!
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.pauseQuizTimer();
+        this.pauseMatchTimer();
+      } else {
+        if (this.currentView === 'quiz') {
+          this.resumeQuizTimer();
+        } else if (this.currentView === 'match') {
+          this.resumeMatchTimer();
+        }
+      }
+    });
   }
 
   // --- RENDER CATEGORY BAR ---
@@ -632,7 +680,18 @@ class KroVocabApp {
 
   // --- VIEW SWITCHER ---
   switchView(viewName) {
+    const prevView = this.currentView;
     this.currentView = viewName;
+
+    // Wenn der Quiz-Reiter verlassen wird: Quiz-Timer SOFORT anhalten!
+    if (prevView === 'quiz') {
+      this.pauseQuizTimer();
+    }
+
+    // Wenn der Match-Reiter verlassen wird: Match-Timer anhalten!
+    if (prevView === 'match') {
+      this.pauseMatchTimer();
+    }
 
     // Auf dem Profil-Tab gibt es keine Kategorien - Filterleiste ausblenden für maximalen Platz
     if (this.elements.categoryBar) {
@@ -654,6 +713,33 @@ class KroVocabApp {
     Object.entries(this.elements.views).forEach(([name, el]) => {
       el.classList.toggle('active-view', name === viewName);
     });
+
+    // Wenn man zum Quiz-Reiter wechselt / zurückkehrt:
+    if (viewName === 'quiz') {
+      if (this.quizMode === 'spika') {
+        if (!this.spikaQueue || this.spikaQueue.length === 0) {
+          this.startSpikaTrainer();
+        }
+      } else {
+        // Blitz-Quiz: Falls ein Quiz aktiv ist, Zeit fortsetzen statt neu zu starten!
+        if (this.quizActive && this.quizQuestionActive) {
+          this.resumeQuizTimer();
+        } else if (!this.quizActive) {
+          this.startQuiz();
+        }
+      }
+      return;
+    }
+
+    // Wenn man zum Match-Reiter wechselt / zurückkehrt:
+    if (viewName === 'match') {
+      if (this.matchTiles && this.matchTiles.length > 0 && this.matchedPairsCount < 6) {
+        this.resumeMatchTimer();
+      } else {
+        this.initMatchGame();
+      }
+      return;
+    }
 
     this.renderCurrentView();
   }
@@ -1103,7 +1189,7 @@ class KroVocabApp {
   }
 
   startQuiz() {
-    clearInterval(this.quizTimer);
+    this.stopQuizTimer();
     const pool = this.getActiveVocab();
     if (pool.length < 4) {
       this.elements.quizWord.textContent = "Zu wenige Vokabeln für ein Quiz.";
@@ -1111,6 +1197,7 @@ class KroVocabApp {
       return;
     }
 
+    this.quizActive = true;
     this.quizQueue = [...pool].sort(() => Math.random() - 0.5).slice(0, 10);
     this.quizIndex = 0;
     this.quizScore = 0;
@@ -1119,13 +1206,16 @@ class KroVocabApp {
   }
 
   renderQuizQuestion() {
-    clearInterval(this.quizTimer);
+    this.stopQuizTimer();
     if (this.quizIndex >= this.quizQueue.length) {
+      this.quizActive = false;
+      this.quizQuestionActive = false;
       this.showQuizSummary();
       return;
     }
 
     const currentItem = this.quizQueue[this.quizIndex];
+    this.quizCurrentItem = currentItem;
     const isHrDe = (this.state.direction !== 'de-hr');
 
     if (this.elements.quizQuestionSub) {
@@ -1150,30 +1240,81 @@ class KroVocabApp {
       btn.className = 'quiz-option-btn';
       const optText = isHrDe ? opt.de : opt.hr;
       btn.innerHTML = `<span>${optText}</span> <span>➜</span>`;
-      btn.addEventListener('click', () => this.handleQuizAnswer(btn, opt.id === currentItem.id, currentItem));
+      btn.addEventListener('click', () => {
+        this.playTone('pop');
+        this.handleQuizAnswer(btn, opt.id === currentItem.id, currentItem);
+      });
       this.elements.quizOptions.appendChild(btn);
     });
 
-    // Start 15s Timer
-    this.quizTimeLeft = 15;
-    this.elements.quizTimerFill.style.width = '100%';
-    const intervalTime = 100;
-    const decrement = (intervalTime / (15 * 1000)) * 100;
+    // 15s Timer starten (15000 ms)
+    this.quizRemainingMs = 15000;
+    this.quizQuestionActive = true;
+    if (this.elements.quizTimerFill) {
+      this.elements.quizTimerFill.style.width = '100%';
+    }
+    this.startQuizTimer();
+  }
+
+  startQuizTimer() {
+    this.stopQuizTimer();
+    if (!this.quizQuestionActive || this.quizRemainingMs <= 0) return;
+
+    this.quizTimerStart = Date.now();
+    const totalDuration = 15000;
 
     this.quizTimer = setInterval(() => {
-      const currentWidth = parseFloat(this.elements.quizTimerFill.style.width) || 100;
-      const newWidth = currentWidth - decrement;
-      if (newWidth <= 0) {
-        clearInterval(this.quizTimer);
-        this.handleQuizAnswer(null, false, currentItem);
-      } else {
-        this.elements.quizTimerFill.style.width = `${newWidth}%`;
+      // Wenn der Nutzer nicht mehr aktiv auf dem Quiz-Tab ist: Timer pausieren
+      if (this.currentView !== 'quiz') {
+        this.pauseQuizTimer();
+        return;
       }
-    }, intervalTime);
+
+      const elapsed = Date.now() - this.quizTimerStart;
+      const currentRemaining = Math.max(0, this.quizRemainingMs - elapsed);
+      const pct = (currentRemaining / totalDuration) * 100;
+
+      if (this.elements.quizTimerFill) {
+        this.elements.quizTimerFill.style.width = `${pct}%`;
+      }
+
+      if (currentRemaining <= 0) {
+        this.stopQuizTimer();
+        this.quizQuestionActive = false;
+        this.handleQuizAnswer(null, false, this.quizCurrentItem);
+      }
+    }, 100);
+  }
+
+  pauseQuizTimer() {
+    if (this.quizTimer) {
+      clearInterval(this.quizTimer);
+      this.quizTimer = null;
+    }
+    if (this.quizQuestionActive && this.quizTimerStart) {
+      const elapsed = Date.now() - this.quizTimerStart;
+      this.quizRemainingMs = Math.max(0, this.quizRemainingMs - elapsed);
+      this.quizTimerStart = null;
+    }
+  }
+
+  resumeQuizTimer() {
+    if (this.currentView === 'quiz' && this.quizMode === 'blitz' && this.quizActive && this.quizQuestionActive && this.quizRemainingMs > 0) {
+      this.startQuizTimer();
+    }
+  }
+
+  stopQuizTimer() {
+    if (this.quizTimer) {
+      clearInterval(this.quizTimer);
+      this.quizTimer = null;
+    }
+    this.quizTimerStart = null;
   }
 
   handleQuizAnswer(clickedBtn, isCorrect, currentItem) {
-    clearInterval(this.quizTimer);
+    this.stopQuizTimer();
+    this.quizQuestionActive = false;
 
     // Disable all options
     const allBtns = this.elements.quizOptions.querySelectorAll('.quiz-option-btn');
@@ -1212,6 +1353,9 @@ class KroVocabApp {
   }
 
   showQuizSummary() {
+    this.stopQuizTimer();
+    this.quizActive = false;
+    this.quizQuestionActive = false;
     this.playTone('victory');
     this.elements.quizWord.textContent = `Quiz beendet! 🏆`;
     this.elements.quizOptions.innerHTML = `
@@ -1324,7 +1468,7 @@ class KroVocabApp {
   // 3. WORT-MATCH ENGINE (Paare verbinden)
   // =========================================================
   initMatchGame() {
-    clearInterval(this.matchTimerInterval);
+    this.stopMatchTimer();
     this.matchSeconds = 0;
     this.matchedPairsCount = 0;
     this.selectedMatchTile = null;
@@ -1355,13 +1499,45 @@ class KroVocabApp {
     this.matchTiles = tiles.sort(() => Math.random() - 0.5);
     this.renderMatchGrid();
 
-    // Timer start
+    // Timer starten
+    this.startMatchTimer();
+  }
+
+  startMatchTimer() {
+    this.stopMatchTimer();
     this.matchTimerInterval = setInterval(() => {
+      // Wenn der Nutzer den Match-Tab verlassen hat: pausieren
+      if (this.currentView !== 'match') {
+        this.pauseMatchTimer();
+        return;
+      }
       this.matchSeconds++;
       const mins = String(Math.floor(this.matchSeconds / 60)).padStart(2, '0');
       const secs = String(this.matchSeconds % 60).padStart(2, '0');
-      this.elements.matchTimerText.textContent = `${mins}:${secs}`;
+      if (this.elements.matchTimerText) {
+        this.elements.matchTimerText.textContent = `${mins}:${secs}`;
+      }
     }, 1000);
+  }
+
+  pauseMatchTimer() {
+    if (this.matchTimerInterval) {
+      clearInterval(this.matchTimerInterval);
+      this.matchTimerInterval = null;
+    }
+  }
+
+  resumeMatchTimer() {
+    if (this.currentView === 'match' && this.matchedPairsCount < 6 && !this.matchTimerInterval) {
+      this.startMatchTimer();
+    }
+  }
+
+  stopMatchTimer() {
+    if (this.matchTimerInterval) {
+      clearInterval(this.matchTimerInterval);
+      this.matchTimerInterval = null;
+    }
   }
 
   renderMatchGrid() {
@@ -1419,7 +1595,7 @@ class KroVocabApp {
         else this.speakCroatian(first.tile.text);
 
         if (this.matchedPairsCount === 6) {
-          clearInterval(this.matchTimerInterval);
+          this.stopMatchTimer();
           const timeSpent = this.matchSeconds;
           let isRecord = false;
           if (!this.state.bestMatchTime || timeSpent < this.state.bestMatchTime) {
