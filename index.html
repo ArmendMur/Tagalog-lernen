@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>KroVocab · Kroatisch Vokabeltrainer</title>
+  
+  <!-- iPhone / iOS PWA Metatags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KroVocab">
+  <meta name="theme-color" content="#090D16">
+  <meta name="description" content="Alltägliche kroatische Vokabeln, Slang und Konversations-Chunks für Herkunftssprachler. Optimiert für iPhone 14 Pro.">
+  
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23090D16'/><circle cx='50' cy='50' r='36' fill='%233B82F6'/><path d='M30 40h40v20H30z' fill='%23EF4444'/><text x='50' y='63' font-size='38' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif' font-weight='bold'>HR</text></svg>">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div id="app-container">
+    <div class="ambient-glow"></div>
+
+    <!-- Header mit Dynamic Island Einpassung -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="cro-badge">🇭🇷</div>
+        <h1>Kro<span>Vocab</span></h1>
+      </div>
+
+      <div class="header-stats">
+        <div class="stat-pill streak" title="Aktueller Streak">
+          <span>🔥</span>
+          <span id="header-streak-num">1</span>
+        </div>
+        <div class="stat-pill xp" title="Erfahrungspunkte (XP)">
+          <span>⭐</span>
+          <span id="header-xp-num">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Kategorien Filterleiste (Horizontal scrollbar auf Touch) -->
+    <nav class="category-filter-bar" id="category-filter-bar"></nav>
+
+    <!-- Hauptinhaltsbereich -->
+    <main class="main-content">
+      
+      <!-- 1. KARTEN-SWIPE VIEW (Standardansicht) -->
+      <section id="view-swipe" class="view active-view">
+        <div class="swipe-view-container">
+          <div class="swipe-card-deck" id="swipe-card-deck">
+            <!-- Karten werden dynamisch via JS generiert -->
+          </div>
+
+          <!-- Touch/Tap Hilfskontrollen -->
+          <div class="swipe-controls">
+            <button class="swipe-btn repeat-btn" id="btn-swipe-repeat" title="Noch üben (Wiederholen)">❌</button>
+            <button class="swipe-btn flip-btn" id="btn-swipe-flip" title="Karte umdrehen">🔄</button>
+            <button class="swipe-btn know-btn" id="btn-swipe-know" title="Kann ich (Gekonnt)">✅</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. BLITZ-QUIZ VIEW -->
+      <section id="view-quiz" class="view">
+        <div class="quiz-container">
+          <div>
+            <div class="quiz-header">
+              <span style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">⚡ BLITZ-QUIZ</span>
+              <div class="quiz-score-badge" id="quiz-score-val">0 Pkt</div>
+            </div>
+            
+            <div class="quiz-timer-bar">
+              <div class="quiz-timer-fill" id="quiz-timer-fill"></div>
+            </div>
+
+            <div class="quiz-question-box">
+              <div class="quiz-question-sub">Was bedeutet auf Deutsch?</div>
+              <div class="quiz-question-word" id="quiz-word">...</div>
+            </div>
+
+            <div class="quiz-options-grid" id="quiz-options-grid"></div>
+          </div>
+
+          <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">
+            Wähle die passende deutsche Bedeutung schnell aus!
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. WORT-MATCH VIEW -->
+      <section id="view-match" class="view">
+        <div class="match-container">
+          <div class="match-header">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">🧩 PAARE MATCHEN</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Tippe Kroatisch & Deutsch zusammen</div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="font-family: monospace; font-size: 15px; font-weight: 700; color: var(--accent-hr-blue);" id="match-timer-val">00:00</span>
+              <button id="btn-restart-match" class="row-action-btn" title="Neu mischen">🔄</button>
+            </div>
+          </div>
+
+          <div class="match-grid" id="match-grid"></div>
+        </div>
+      </section>
+
+      <!-- 4. WÖRTERBUCH & SUCHE VIEW -->
+      <section id="view-list" class="view">
+        <div class="vocab-list-container">
+          <div class="search-box-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="vocab-search-input" class="search-input" placeholder="Vokabel, Slang oder Beispielsatz suchen...">
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Wortschatz-Übersicht</span>
+            <button id="btn-open-add-modal" class="stat-pill" style="cursor: pointer; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: var(--accent-hr-blue);">
+              <span>➕</span> <span>Eigene Vokabel</span>
+            </button>
+          </div>
+
+          <div class="vocab-scroll-list" id="vocab-scroll-list"></div>
+        </div>
+      </section>
+
+      <!-- 5. STATS & ERFOLGE VIEW -->
+      <section id="view-stats" class="view">
+        <div class="stats-view-container">
+          
+          <div class="level-card">
+            <div class="level-badge" id="stats-level-badge">👑</div>
+            <div class="level-title" id="stats-level-title">Početnik</div>
+            <div class="level-desc" id="stats-level-desc">Lerne regelmäßig, um dein Sprachlevel zu steigern!</div>
+            
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" id="stats-xp-bar-fill" style="width: 10%;"></div>
+            </div>
+          </div>
+
+          <div class="stats-grid-2col">
+            <div class="metric-card">
+              <div class="metric-label">🔥 Tages-Streak</div>
+              <div class="metric-num"><span id="stats-streak-days">1</span> Tag(e)</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">📚 Vokabeln im Pool</div>
+              <div class="metric-num" id="stats-total-words">0</div>
+            </div>
+          </div>
+
+          <div class="metric-card" style="margin-bottom: 0;">
+            <div class="metric-label">🎯 Gemeisterte Wörter (Stufe 3)</div>
+            <div class="metric-num" id="stats-mastered-words" style="color: var(--accent-green);">0</div>
+          </div>
+
+          <div class="srs-box-summary">
+            <div class="srs-title">🧠 Spaced-Repetition Lernboxen</div>
+            <div class="srs-levels-row">
+              <div class="srs-pill lvl1">
+                <div class="count" id="srs-count-lvl1">0</div>
+                <div class="label">Stufe 1 (Neu)</div>
+              </div>
+              <div class="srs-pill lvl2">
+                <div class="count" id="srs-count-lvl2">0</div>
+                <div class="label">Stufe 2 (Üben)</div>
+              </div>
+              <div class="srs-pill lvl3">
+                <div class="count" id="srs-count-lvl3">0</div>
+                <div class="label">Stufe 3 (Meister)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card" style="text-align: left;">
+            <div style="font-size: 14px; font-weight: 700; margin-bottom: 6px;">💡 Tipp für Herkunftssprachler:</div>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+              Da du Grammatik intuitiv beherrschst, liegt der Schlüssel zu flüssigem Kroatisch im schnellen Zugriff auf <strong>Ganzphrasen ("Chunks")</strong> und <strong>Slang</strong>. Nutze täglich 5 Minuten Karten-Swipe für den besten Effekt!
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (iPhone Tab Bar) -->
+    <nav class="app-tabbar">
+      <button class="tab-item active" data-view="swipe">
+        <span class="tab-icon">🎴</span>
+        <span>Karten</span>
+      </button>
+      <button class="tab-item" data-view="quiz">
+        <span class="tab-icon">⚡</span>
+        <span>Blitz-Quiz</span>
+      </button>
+      <button class="tab-item" data-view="match">
+        <span class="tab-icon">🧩</span>
+        <span>Match</span>
+      </button>
+      <button class="tab-item" data-view="list">
+        <span class="tab-icon">📖</span>
+        <span>Lexikon</span>
+      </button>
+      <button class="tab-item" data-view="stats">
+        <span class="tab-icon">🏆</span>
+        <span>Profil</span>
+      </button>
+    </nav>
+
+    <!-- Modal: Eigene Vokabel hinzufügen -->
+    <div class="modal-overlay" id="add-modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3>Eigene Vokabel hinzufügen</h3>
+          <button class="modal-close-btn" id="btn-modal-close">✕</button>
+        </div>
+        <form id="add-vocab-form">
+          <input type="text" id="modal-input-hr" class="modal-input" placeholder="Kroatisch (z.B. Skužiti)" required>
+          <input type="text" id="modal-input-de" class="modal-input" placeholder="Deutsch (z.B. Kapieren / verstehen)" required>
+          <input type="text" id="modal-input-ex-hr" class="modal-input" placeholder="Beispielsatz kroatisch (optional)">
+          <input type="text" id="modal-input-ex-de" class="modal-input" placeholder="Beispielsatz deutsch (optional)">
+          <button type="submit" class="modal-btn-submit">Speichern & +30 XP erhalten</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="vocab-data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Service Worker Registrierung für PWA Offline Support
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.log('SW registration note:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
