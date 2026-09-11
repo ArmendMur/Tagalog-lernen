@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23090D16'/><circle cx='50' cy='50' r='36' fill='%233B82F6'/><path d='M30 40h40v20H30z' fill='%23EF4444'/><text x='50' y='63' font-size='38' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif' font-weight='bold'>HR</text></svg>">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=2.5.0">
+  <link rel="stylesheet" href="styles.css?v=2.5.1">
 </head>
 <body>
 
@@ -221,25 +221,31 @@
           </div>
 
           <div class="metric-card" style="margin-bottom: 0;">
-            <div class="metric-label">🎯 Gemeisterte Wörter (Stufe 3)</div>
+            <div class="metric-label">🎯 Gemeisterte Wörter (Felsenfest im Kopf)</div>
             <div class="metric-num" id="stats-mastered-words" style="color: var(--accent-green);">0</div>
           </div>
 
           <div class="srs-box-summary">
-            <div class="srs-title">🧠 Spaced-Repetition Lernboxen</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="srs-title" style="margin-bottom: 0;">🧠 Wortschatz-Gedächtnis</div>
+              <span style="font-size: 11px; font-weight: 600; color: var(--accent-hr-blue); background: rgba(59, 130, 246, 0.15); padding: 3px 8px; border-radius: var(--radius-full);">3 Stufen</span>
+            </div>
             <div class="srs-levels-row">
               <div class="srs-pill lvl1">
                 <div class="count" id="srs-count-lvl1">0</div>
-                <div class="label">Stufe 1 (Neu)</div>
+                <div class="label">🔄 In Arbeit</div>
               </div>
               <div class="srs-pill lvl2">
                 <div class="count" id="srs-count-lvl2">0</div>
-                <div class="label">Stufe 2 (Üben)</div>
+                <div class="label">⚡ Gefestigt</div>
               </div>
               <div class="srs-pill lvl3">
                 <div class="count" id="srs-count-lvl3">0</div>
-                <div class="label">Stufe 3 (Meister)</div>
+                <div class="label">🏆 Gemeistert</div>
               </div>
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 10px; line-height: 1.45; background: rgba(255, 255, 255, 0.03); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+              💡 <strong>Wie dein Speicher lernt:</strong> Wenn du eine Karte mit <em>„Kann ich“ (✅)</em> swipest, steigt sie auf. Nach 3 Erfolgen ist sie <strong>gemeistert</strong> und sitzt felsenfest im Langzeitgedächtnis!
             </div>
           </div>
 
@@ -254,7 +260,7 @@
             <button id="btn-force-update" class="modal-btn-submit" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-light); font-size: 13px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
               <span>🔄</span> <span>App aktualisieren / Cache leeren</span>
             </button>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.5.0 · Aktualisiert bei Änderungen automatisch</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.5.1 · Aktualisiert bei Änderungen automatisch</div>
           </div>
 
         </div>
@@ -319,13 +325,13 @@
   </div>
 
   <!-- Scripts mit Cache-Busting Version Query Parameter -->
-  <script src="vocab-data.js?v=2.5.0"></script>
-  <script src="app.js?v=2.5.0"></script>
+  <script src="vocab-data.js?v=2.5.1"></script>
+  <script src="app.js?v=2.5.1"></script>
   <script>
     // Automatisches Service Worker Update-Handling
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=2.5.0').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=2.5.1').then(reg => {
           // Prüfe bei jedem Seitenaufruf sofort auf Updates
           reg.update();
 

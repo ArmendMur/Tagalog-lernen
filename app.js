@@ -444,6 +444,17 @@ class KroVocabApp {
   switchView(viewName) {
     this.currentView = viewName;
 
+    // Auf dem Profil-Tab gibt es keine Kategorien - Filterleiste ausblenden für maximalen Platz
+    if (this.elements.categoryBar) {
+      this.elements.categoryBar.style.display = (viewName === 'stats') ? 'none' : 'flex';
+    }
+
+    // Beim Wechsel zum Profil-Tab sicherstellen, dass ganz oben gestartet wird
+    if (viewName === 'stats') {
+      const statsContainer = document.querySelector('.stats-view-container');
+      if (statsContainer) statsContainer.scrollTop = 0;
+    }
+
     // Update Tabs
     this.elements.tabButtons.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.view === viewName);
