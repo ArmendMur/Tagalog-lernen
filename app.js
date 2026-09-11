@@ -527,6 +527,9 @@ class KroVocabApp {
 
   flipCurrentCard() {
     if (!this.activeCardEl) return;
+    const now = Date.now();
+    if (this.lastFlipTime && (now - this.lastFlipTime < 280)) return;
+    this.lastFlipTime = now;
     this.activeCardEl.classList.toggle('is-flipped');
     this.playTone('flip');
   }
@@ -537,16 +540,28 @@ class KroVocabApp {
     let currentX = 0;
     let currentY = 0;
     let isDragging = false;
-    let hasMoved = false;
+    let isSwiping = false;
+    let startTime = 0;
 
     const stampKnow = card.querySelector('.stamp-know');
     const stampRepeat = card.querySelector('.stamp-repeat');
 
+    // Direkter Klick / Tap auf die Karte zum Umdrehen
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('.card-audio-btn')) return;
+      if (!isSwiping) {
+        this.flipCurrentCard();
+      }
+    });
+
     const onStart = (clientX, clientY) => {
       isDragging = true;
-      hasMoved = false;
+      isSwiping = false;
       startX = clientX;
       startY = clientY;
+      currentX = 0;
+      currentY = 0;
+      startTime = Date.now();
       card.classList.add('dragging');
     };
 
@@ -555,25 +570,28 @@ class KroVocabApp {
       currentX = clientX - startX;
       currentY = clientY - startY;
 
-      if (Math.abs(currentX) > 8 || Math.abs(currentY) > 8) {
-        hasMoved = true;
+      // Erst ab 18px Schwellenwert als Swipe werten (Touch-Slop Toleranz für Fingertipp)
+      if (Math.hypot(currentX, currentY) > 18) {
+        isSwiping = true;
       }
 
-      const rotate = currentX * 0.07;
-      card.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) rotate(${rotate}deg)`;
+      if (isSwiping) {
+        const rotate = currentX * 0.07;
+        card.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) rotate(${rotate}deg)`;
 
-      // Stamp opacity based on swipe direction
-      if (currentX > 20) {
-        const opacity = Math.min(1, (currentX - 20) / 100);
-        stampKnow.style.opacity = opacity;
-        stampRepeat.style.opacity = 0;
-      } else if (currentX < -20) {
-        const opacity = Math.min(1, (-currentX - 20) / 100);
-        stampRepeat.style.opacity = opacity;
-        stampKnow.style.opacity = 0;
-      } else {
-        stampKnow.style.opacity = 0;
-        stampRepeat.style.opacity = 0;
+        // Stempel Opacity
+        if (currentX > 20) {
+          const opacity = Math.min(1, (currentX - 20) / 90);
+          if (stampKnow) stampKnow.style.opacity = opacity;
+          if (stampRepeat) stampRepeat.style.opacity = 0;
+        } else if (currentX < -20) {
+          const opacity = Math.min(1, (-currentX - 20) / 90);
+          if (stampRepeat) stampRepeat.style.opacity = opacity;
+          if (stampKnow) stampKnow.style.opacity = 0;
+        } else {
+          if (stampKnow) stampKnow.style.opacity = 0;
+          if (stampRepeat) stampRepeat.style.opacity = 0;
+        }
       }
     };
 
@@ -582,13 +600,17 @@ class KroVocabApp {
       isDragging = false;
       card.classList.remove('dragging');
 
-      if (!hasMoved) {
-        // Simple tap -> Flip card!
+      const duration = Date.now() - startTime;
+      const distance = Math.hypot(currentX, currentY);
+
+      // Wenn kein Swipe oder kurzer schneller Tap: Umdrehen!
+      if (!isSwiping || (duration < 280 && distance < 25)) {
         this.flipCurrentCard();
+        isSwiping = false;
         return;
       }
 
-      const threshold = 90;
+      const threshold = 80;
       if (currentX > threshold) {
         // Swiped Right -> ZNAM!
         this.animateCardExit(card, 1);
@@ -598,41 +620,58 @@ class KroVocabApp {
         this.animateCardExit(card, -1);
         this.handleSwipeChoice(false);
       } else {
-        // Reset to center
+        // Zurück zur Mitte
         card.style.transform = '';
-        stampKnow.style.opacity = 0;
-        stampRepeat.style.opacity = 0;
+        if (stampKnow) stampKnow.style.opacity = 0;
+        if (stampRepeat) stampRepeat.style.opacity = 0;
       }
+
+      setTimeout(() => { isSwiping = false; }, 100);
     };
 
-    // Touch events for iPhone Safari
+    // Touch events direkt auf der Karte
     card.addEventListener('touchstart', (e) => {
+      if (e.target.closest('button') || e.target.closest('.card-audio-btn')) return;
       const touch = e.touches[0];
       onStart(touch.clientX, touch.clientY);
     }, { passive: true });
 
-    window.addEventListener('touchmove', (e) => {
+    card.addEventListener('touchmove', (e) => {
       if (!isDragging) return;
       const touch = e.touches[0];
       onMove(touch.clientX, touch.clientY);
     }, { passive: true });
 
-    window.addEventListener('touchend', () => {
+    card.addEventListener('touchend', () => {
+      if (!isDragging) return;
       onEnd();
     }, { passive: true });
 
-    // Mouse events for Desktop testing
+    card.addEventListener('touchcancel', () => {
+      if (!isDragging) return;
+      card.style.transform = '';
+      isDragging = false;
+      isSwiping = false;
+    });
+
+    // Mouse events für Desktop-Klicks
     card.addEventListener('mousedown', (e) => {
+      if (e.target.closest('button') || e.target.closest('.card-audio-btn')) return;
       onStart(e.clientX, e.clientY);
     });
 
-    window.addEventListener('mousemove', (e) => {
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
       onMove(e.clientX, e.clientY);
-    });
+    };
 
-    window.addEventListener('mouseup', () => {
+    const onMouseUp = () => {
+      if (!isDragging) return;
       onEnd();
-    });
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
   }
 
   animateCardExit(card, direction) {

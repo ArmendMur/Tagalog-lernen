@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23090D16'/><circle cx='50' cy='50' r='36' fill='%233B82F6'/><path d='M30 40h40v20H30z' fill='%23EF4444'/><text x='50' y='63' font-size='38' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif' font-weight='bold'>HR</text></svg>">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=2.1.0">
+  <link rel="stylesheet" href="styles.css?v=2.2.0">
 </head>
 <body>
 
@@ -187,7 +187,7 @@
             <button id="btn-force-update" class="modal-btn-submit" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-light); font-size: 13px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
               <span>🔄</span> <span>App aktualisieren / Cache leeren</span>
             </button>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.1.0 · Aktualisiert bei Änderungen automatisch</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.2.0 · Aktualisiert bei Änderungen automatisch</div>
           </div>
 
         </div>
@@ -239,13 +239,13 @@
   </div>
 
   <!-- Scripts mit Cache-Busting Version Query Parameter -->
-  <script src="vocab-data.js?v=2.1.0"></script>
-  <script src="app.js?v=2.1.0"></script>
+  <script src="vocab-data.js?v=2.2.0"></script>
+  <script src="app.js?v=2.2.0"></script>
   <script>
     // Automatisches Service Worker Update-Handling
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=2.1.0').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=2.2.0').then(reg => {
           // Prüfe bei jedem Seitenaufruf sofort auf Updates
           reg.update();
 
