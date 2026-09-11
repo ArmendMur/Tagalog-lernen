@@ -1,5 +1,5 @@
 // Kroatische Vokabeldatenbank - Speziell kuratiert für alltagstaugliche Kommunikation & Herkunftssprachler
-const VOCAB_DATA = [
+var VOCAB_DATA = [
   // --- KATEGORIE: KAFIC & AUSGEHEN (Kafić, hrana i piće) ---
   {
     id: 1,
@@ -978,7 +978,7 @@ const VOCAB_DATA = [
 ];
 
 // Kategorien-Metadaten für Filter & Badges
-const CATEGORIES = {
+var CATEGORIES = {
   all: { name: "Sve (Alle)", icon: "✨" },
   kafic: { name: "Kafić & Ausgehen", icon: "☕" },
   slang: { name: "Slang & Spika", icon: "🔥" },
@@ -988,3 +988,9 @@ const CATEGORIES = {
   gefuehle: { name: "Gefühle & Reaktionen", icon: "❤️" },
   verben: { name: "Flüssige Verben", icon: "⚡" }
 };
+
+if (typeof window !== 'undefined') {
+  window.VOCAB_DATA = VOCAB_DATA;
+  window.CATEGORIES = CATEGORIES;
+}
+

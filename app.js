@@ -7,13 +7,13 @@
 class KroVocabApp {
   constructor() {
     this.storageKey = 'krovocab_user_data_v2';
-    this.vocab = [...VOCAB_DATA];
+    this.vocab = (typeof VOCAB_DATA !== 'undefined') ? [...VOCAB_DATA] : ((typeof window !== 'undefined' && window.VOCAB_DATA) ? [...window.VOCAB_DATA] : []);
+    this.categories = (typeof CATEGORIES !== 'undefined') ? CATEGORIES : ((typeof window !== 'undefined' && window.CATEGORIES) ? window.CATEGORIES : {});
     this.currentCategory = 'all';
     this.currentView = 'swipe';
     
     // User State
     this.state = this.loadState();
-    this.checkDailyStreak();
 
     // Audio Synthesizer (Web Audio API)
     this.initAudioContext();
@@ -41,8 +41,16 @@ class KroVocabApp {
     this.matchTimerInterval = null;
     this.matchSeconds = 0;
 
+    // 1. Initialize DOM first
     this.initDOM();
+
+    // 2. Check Daily Streak (safely updates header now)
+    this.checkDailyStreak();
+
+    // 3. Bind interactive events
     this.bindEvents();
+
+    // 4. Render initial view
     this.renderCurrentView();
   }
 
@@ -299,9 +307,11 @@ class KroVocabApp {
 
   // --- RENDER CATEGORY BAR ---
   renderCategoryBar() {
+    if (!this.elements || !this.elements.categoryBar) return;
     this.elements.categoryBar.innerHTML = '';
     
-    Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const cats = this.categories || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : {});
+    Object.entries(cats).forEach(([key, cat]) => {
       const chip = document.createElement('div');
       chip.className = `cat-chip ${this.currentCategory === key ? 'active' : ''}`;
       chip.innerHTML = `<span>${cat.icon}</span> <span>${cat.name}</span>`;
@@ -367,6 +377,7 @@ class KroVocabApp {
 
   // --- HEADER & STATS ---
   updateHeaderStats() {
+    if (!this.elements) return;
     if (this.elements.headerStreak) {
       this.elements.headerStreak.textContent = this.state.streak;
     }
@@ -441,7 +452,7 @@ class KroVocabApp {
     cardEl.className = 'flashcard';
     cardEl.id = 'active-card';
 
-    const catName = CATEGORIES[item.category] ? CATEGORIES[item.category].name : 'Allgemein';
+    const catName = (this.categories && this.categories[item.category]) ? this.categories[item.category].name : 'Allgemein';
 
     cardEl.innerHTML = `
       <div class="stamp stamp-know">ZNAM ✅</div>
@@ -633,6 +644,11 @@ class KroVocabApp {
 
   handleSwipeChoice(isKnown) {
     if (this.cardQueue.length === 0) return;
+
+    if (this.activeCardEl) {
+      this.animateCardExit(this.activeCardEl, isKnown ? 1 : -1);
+    }
+
     const item = this.cardQueue.shift();
 
     // SRS Logic
@@ -892,7 +908,7 @@ class KroVocabApp {
       row.className = 'vocab-row-card';
       
       const isFav = this.state.favorites.includes(item.id);
-      const catName = CATEGORIES[item.category] ? CATEGORIES[item.category].name : 'Eigene';
+      const catName = (this.categories && this.categories[item.category]) ? this.categories[item.category].name : 'Eigene';
 
       row.innerHTML = `
         <div class="vocab-row-info">
@@ -961,8 +977,22 @@ class KroVocabApp {
   }
 }
 
-// Start app when DOM is ready
+// Start app when DOM is ready (or immediately if already loaded)
 let app;
-document.addEventListener('DOMContentLoaded', () => {
-  app = new KroVocabApp();
-});
+function initKroVocabApp() {
+  if (!app) {
+    app = new KroVocabApp();
+    if (typeof window !== 'undefined') {
+      window.app = app;
+    }
+  }
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initKroVocabApp);
+  } else {
+    initKroVocabApp();
+  }
+}
+
