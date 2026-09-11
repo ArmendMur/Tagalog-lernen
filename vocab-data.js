@@ -1881,8 +1881,313 @@ var CATEGORIES = {
   gefuehle: { name: "Gefühle & Reaktionen", icon: "❤️" }
 };
 
+// 12 Authentische Alltagssituationen für den Spika-Trainer (Herkunftssprachler)
+var SPIKA_DIALOGS = [
+  {
+    id: "dlg-1",
+    category: "Kafić & Ausgehen",
+    emoji: "☕",
+    title: "Kaffee bestellen wie ein Local",
+    situation: "Der Kellner kommt an deinen Tisch im Café: »Izvolite, što ćete popiti?«",
+    prompt: "Wie bestellst du ganz entspannt wie ein Einheimischer?",
+    options: [
+      {
+        text: "»Može jedna bijela kava s toplim mlijekom i čaša vode, molim vas.«",
+        isCorrect: true,
+        feedback: "Perfekt! Kroaten sagen fast immer »Može...« (wörtlich: »Kann [sein]...«) anstelle von »Ich will / Ja hoću«. Es klingt höflich, entspannt und typisch lokal."
+      },
+      {
+        text: "»Ja želim uzeti kavu sa mlijekom.«",
+        isCorrect: false,
+        feedback: "Klingt wie eine wörtliche Übersetzung aus dem Deutschen (»Ich will nehmen«). Das sagt man im Kroatischen so nicht."
+      },
+      {
+        text: "»Dajte mi čaj od mente odmah.«",
+        isCorrect: false,
+        feedback: "Zu forsch und herrisch. »Može... molim vas« ist der goldene Standard."
+      }
+    ]
+  },
+  {
+    id: "dlg-2",
+    category: "Kafić & Ausgehen",
+    emoji: "🧾",
+    title: "Die Rechnung begleichen",
+    situation: "Ihr seid fertig im Lokal und der Kellner geht an eurem Tisch vorbei.",
+    prompt: "Wie bittest du ihn natürlich um die Rechnung?",
+    options: [
+      {
+        text: "»Može račun, molim vas? / Da platimo!«",
+        isCorrect: true,
+        feedback: "Genau richtig! »Može račun« oder »Da platimo!« (»Dass wir zahlen!«) sind die beiden universellen Floskeln beim Bezahlen."
+      },
+      {
+        text: "»Ja bih želio platiti svoj dug ovdje.«",
+        isCorrect: false,
+        feedback: "Viel zu bürokratisch – »dug« bedeutet buchstäblich Schulden/Kredite bei der Bank!"
+      },
+      {
+        text: "»Koliko novaca vi hoćete od mene?«",
+        isCorrect: false,
+        feedback: "Viel zu grob und unüblich."
+      }
+    ]
+  },
+  {
+    id: "dlg-3",
+    category: "Treffen & Pläne",
+    emoji: "⏰",
+    title: "Verspätung beim Treffen",
+    situation: "Dein Freund wartet schon 15 Minuten am Treffpunkt und schreibt: »Pa gdje si ti do sad?!«",
+    prompt: "Wie antwortest du authentisch, dass du gleich da bist?",
+    options: [
+      {
+        text: "»Evo me, zapeo sam u gužvi, stižem za dvije minute!«",
+        isCorrect: true,
+        feedback: "Treffer! »Evo me« (»Hier bin ich schon«) und »zapeo u gužvi« (»im Stau/Gewühl festgesteckt«) sind absolute Standard-Chunks."
+      },
+      {
+        text: "»Ja kasnim zato što promet je loš, čekaj me.«",
+        isCorrect: false,
+        feedback: "Grammatikalisch und klanglich sehr holprig aus dem Deutschen übersetzt."
+      },
+      {
+        text: "»Nisam mogao doći jer sam zaboravio vrijeme.«",
+        isCorrect: false,
+        feedback: "Klingt distanziert, unglaubwürdig und kalt."
+      }
+    ]
+  },
+  {
+    id: "dlg-4",
+    category: "Smalltalk & Phrasen",
+    emoji: "👋",
+    title: "Zufälliges Wiedersehen auf der Straße",
+    situation: "Du triffst unerwartet einen alten Bekannten in der Fußgängerzone.",
+    prompt: "Wie begrüßt du ihn mit echter kroatischer Herzlichkeit?",
+    options: [
+      {
+        text: "»Ooo pa di si ti, šta ima novo? Sto godina te nisam vidio!«",
+        isCorrect: true,
+        feedback: "Brillant! »Di si ti« (umgangssprachlich für »gdje si«) und »sto godina« (»seit hundert Jahren«) nutzt jeder für ein freudiges Wiedersehen."
+      },
+      {
+        text: "»Dobar dan moj stari prijatelju, kako je tvoj život danas?«",
+        isCorrect: false,
+        feedback: "Klingt wie aus einem altertümlichen Schulbuch aus dem 19. Jahrhundert!"
+      },
+      {
+        text: "»Hej ti, zašto hodaš ovdje po cesti?«",
+        isCorrect: false,
+        feedback: "Klingt eher vorwurfsvoll und aggressiv als herzlich."
+      }
+    ]
+  },
+  {
+    id: "dlg-5",
+    category: "Alltag & Unterwegs",
+    emoji: "🥐",
+    title: "In der Bäckerei (Pekara)",
+    situation: "Du stehst an der Bäckerei-Theke und willst einen warmen Fleisch-Burek.",
+    prompt: "Wie fragst du die Verkäuferin, ob der Burek frisch ist?",
+    options: [
+      {
+        text: "»Dobar dan! Je li burek friški? Dajte mi jedan s mesom, molim vas.«",
+        isCorrect: true,
+        feedback: "Top! »Friški« ist das typischste Wort für ofenfrisch/warm. »Jedan s mesom« ist die klare Ansage."
+      },
+      {
+        text: "»Ja bih htio kupiti komad novog toplog bureka s mesom.«",
+        isCorrect: false,
+        feedback: "Niemand sagt »komad novog bureka«. »Jedan s mesom« reicht völlig."
+      },
+      {
+        text: "»Molim vas jedan burek koji nije star od jučer.«",
+        isCorrect: false,
+        feedback: "Klingt misstrauisch und unhöflich gegenüber dem Personal."
+      }
+    ]
+  },
+  {
+    id: "dlg-6",
+    category: "Gefühle & Reaktionen",
+    emoji: "🛋️",
+    title: "Einladung freundlich ablehnen",
+    situation: "Ein Kumpel ruft um 21 Uhr an: »Ajde van, ekipa se skupila u gradu!« – Du bist aber total k.o.",
+    prompt: "Wie sagst du ehrlich und lässig ab, ohne ihn zu verprellen?",
+    options: [
+      {
+        text: "»Ajme, mrtav umoran sam danas, stvarno mi se ne da. Možemo sutra na kavu?«",
+        isCorrect: true,
+        feedback: "Sehr gut! »Ne da mi se« ist der #1 Ausdruck für »keinen Bock / keine Energie haben«. Ehrlich, direkt und sympathisch."
+      },
+      {
+        text: "»Moje tijelo nema dovoljno energije za izlazak večeras.«",
+        isCorrect: false,
+        feedback: "Klingt wie ein Roboter oder Arztbericht!"
+      },
+      {
+        text: "»Ne želim vas gledati jer ste dosadni.«",
+        isCorrect: false,
+        feedback: "Unnötig beleidigend."
+      }
+    ]
+  },
+  {
+    id: "dlg-7",
+    category: "Treffen & Pläne",
+    emoji: "🔥",
+    title: "Begeisterte Zusage zu Plänen",
+    situation: "Ein Freund schlägt vor: »Idemo večeras bacit đir do rive pa na ćevape?«",
+    prompt: "Wie stimmst du begeistert und verbindlich zu?",
+    options: [
+      {
+        text: "»Može, zvuči top! Računaj na mene.«",
+        isCorrect: true,
+        feedback: "Volltreffer! »Računaj na mene« (»Zähl auf mich«) und »zvuči top« werden ständig verwendet."
+      },
+      {
+        text: "»Ja prihvaćam tvoj prijedlog za šetnju i hranu.«",
+        isCorrect: false,
+        feedback: "Klingt wie die Annahme eines geschäftlichen Vertragsangebots!"
+      },
+      {
+        text: "»Možda dođem ako nema ništa bolje za raditi.«",
+        isCorrect: false,
+        feedback: "Klingt extrem unmotiviert und unfreundlich."
+      }
+    ]
+  },
+  {
+    id: "dlg-8",
+    category: "Alltag & Unterwegs",
+    emoji: "🍲",
+    title: "Familie & Gastfreundschaft",
+    situation: "Deine Tante/Oma legt dir zum dritten Mal Fleisch nach: »Ma uzmi još malo, nisi ništa jeo!« – Du platzt gleich.",
+    prompt: "Wie lehnst du liebevoll, aber bestimmt ab?",
+    options: [
+      {
+        text: "»Hvala ti puno, tetka, preukusno je, ali stvarno ne mogu više – puknut ću!«",
+        isCorrect: true,
+        feedback: "Klassiker! »Puknut ću« (»Ich platze gleich!«) ist der humorvolle und herzliche Weg, die Tante/Oma vom Nachschenken abzuhalten."
+      },
+      {
+        text: "»Prestani mi stavljati hranu, to je previše kalorija.«",
+        isCorrect: false,
+        feedback: "Verletzt die Gefühle der Gastgeberin und klingt kalt."
+      },
+      {
+        text: "»Ova hrana je gotova za mene sada.«",
+        isCorrect: false,
+        feedback: "Falsches Kroatisch – ergibt keinen Sinn."
+      }
+    ]
+  },
+  {
+    id: "dlg-9",
+    category: "Gefühle & Reaktionen",
+    emoji: "🚗",
+    title: "Reaktion auf ein Missgeschick",
+    situation: "Ein Freund ruft an: »Pukla mi je guma usred autoputa i nemam rezervnu!«",
+    prompt: "Wie reagierst du spontan und mitfühlend?",
+    options: [
+      {
+        text: "»Ma daj nemoj me zezat! Jel treba pomoć, di si točno?«",
+        isCorrect: true,
+        feedback: "Ausgezeichnet! »Ma daj nemoj me zezat!« (»Machst du Witze / Willst du mich verarschen?!«) drückt echtes Mitgefühl aus."
+      },
+      {
+        text: "»To je vrlo nesretan događaj s gumom, popravi to sam.«",
+        isCorrect: false,
+        feedback: "Emotionslos und herzlos wie ein Behördenschreiben."
+      },
+      {
+        text: "»Nije me briga za tvoje gume na autu.«",
+        isCorrect: false,
+        feedback: "Unverschämt und rüpelhaft."
+      }
+    ]
+  },
+  {
+    id: "dlg-10",
+    category: "Smalltalk & Phrasen",
+    emoji: "☀️",
+    title: "Sommerhitze & Strand",
+    situation: "Es hat 38 Grad im Schatten im Juli in Kroatien und ihr schwitzt in der Wohnung.",
+    prompt: "Wie schlägst du umgangssprachlich vor, sofort ins Meer zu springen?",
+    options: [
+      {
+        text: "»Uf, koja sparina danas, ne da se disat! Idemo se bacit u more.«",
+        isCorrect: true,
+        feedback: "Authentischer geht's nicht! »Sparina« (schwüle Sommerhitze) und »bacit se u more« (»ins Meer werfen/springen«) ist purer Adria-Lifestyle."
+      },
+      {
+        text: "»Zrak ima visoku temperaturu, predlažem plivanje u vodi.«",
+        isCorrect: false,
+        feedback: "Klingt wie ein wissenschaftlicher Wetterbericht von Meteorologen."
+      },
+      {
+        text: "»Vruće je, ostat ću unutra pod klimom cijeli dan.«",
+        isCorrect: false,
+        feedback: "Kein Aufbruch zum Strand."
+      }
+    ]
+  },
+  {
+    id: "dlg-11",
+    category: "Kafić & Ausgehen",
+    emoji: "🍽️",
+    title: "Im Restaurant nachfragen",
+    situation: "Ihr wartet schon seit 40 Minuten auf eure Hauptspeisen und der Kellner schaut kurz herüber.",
+    prompt: "Wie fragst du höflich nach dem Stand der Dinge?",
+    options: [
+      {
+        text: "»Oprostite, samo da provjerimo – jeste li možda zaboravili na našu narudžbu?«",
+        isCorrect: true,
+        feedback: "Perfekt formuliert! »Samo da provjerimo« (»Nur kurz zur Überprüfung«) ist die höflichste und effektivste Art nachzufragen."
+      },
+      {
+        text: "»Gdje je hrana, umiremo od gladi ovdje već sto sati!«",
+        isCorrect: false,
+        feedback: "Zu forsch und aggressiv für den ersten Hinweis."
+      },
+      {
+        text: "»Zašto vi radite tako sporo danas u kuhinji?«",
+        isCorrect: false,
+        feedback: "Unangemessen provozierend."
+      }
+    ]
+  },
+  {
+    id: "dlg-12",
+    category: "Slang & Spika",
+    emoji: "🌙",
+    title: "Verabschiedung in der Runde",
+    situation: "Es ist spät, die Kumpels trinken noch ein Bier, aber du musst morgen früh raus.",
+    prompt: "Wie verabschiedest du dich lässig und sympathisch von der Gruppe?",
+    options: [
+      {
+        text: "»Ekipa, ja polako moram gibat, rano se ustajem. Čujemo se sutra, ajde bok!«",
+        isCorrect: true,
+        feedback: "Legendär! »Ekipa« (Truppe/Leute), »moram gibat« (»muss langsam abdüsen/los«) und »ajde bok!« bilden den perfekten Abgang."
+      },
+      {
+        text: "»Ja sada napuštam ovu zgradu jer moram spavati.«",
+        isCorrect: false,
+        feedback: "Klingt hölzern und fast schon gruselig!"
+      },
+      {
+        text: "»Odlazim zauvijek, laku noć svima.«",
+        isCorrect: false,
+        feedback: "Viel zu theatralisch!"
+      }
+    ]
+  }
+];
+
 if (typeof window !== 'undefined') {
   window.VOCAB_DATA = VOCAB_DATA;
   window.CATEGORIES = CATEGORIES;
+  window.SPIKA_DIALOGS = SPIKA_DIALOGS;
 }
 

@@ -56,10 +56,16 @@ class KroVocabApp {
 
   // --- STATE & LOCAL STORAGE ---
   loadState() {
+    const today = new Date().toISOString().split('T')[0];
     const defaultState = {
       xp: 0,
       streak: 1,
-      lastActiveDate: new Date().toISOString().split('T')[0],
+      lastActiveDate: today,
+      direction: 'hr-de', // 'hr-de' (Kroatisch -> Deutsch) oder 'de-hr' (Deutsch -> Kroatisch)
+      dailyGoal: 10,
+      dailyCount: 0,
+      dailyGoalDate: today,
+      dailyBonusAwarded: false,
       srs: {}, // { [id]: { level: 1|2|3, correct: 0, wrong: 0, lastSeen: timestamp } }
       favorites: [],
       customVocab: [],
@@ -100,15 +106,50 @@ class KroVocabApp {
       const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
 
       if (diffDays === 1) {
-        // Logged in next day -> increase streak
+        // Am nächsten Tag eingeloggt -> Streak erhöhen
         this.state.streak += 1;
       } else if (diffDays > 1) {
-        // Streak broken
+        // Streak gerissen
         this.state.streak = 1;
       }
       this.state.lastActiveDate = today;
     }
+
+    // Tagesziel für den neuen Tag zurücksetzen
+    if (!this.state.dailyGoalDate || this.state.dailyGoalDate !== today) {
+      this.state.dailyCount = 0;
+      this.state.dailyGoalDate = today;
+      this.state.dailyBonusAwarded = false;
+    }
+
     this.saveState();
+  }
+
+  incrementDailyProgress(amount = 1) {
+    const today = new Date().toISOString().split('T')[0];
+    if (this.state.dailyGoalDate !== today) {
+      this.state.dailyCount = 0;
+      this.state.dailyGoalDate = today;
+      this.state.dailyBonusAwarded = false;
+    }
+
+    this.state.dailyCount = Math.min(99, (this.state.dailyCount || 0) + amount);
+
+    // Belohnung bei Erreichen von 10 Wörtern
+    if (this.state.dailyCount >= (this.state.dailyGoal || 10) && !this.state.dailyBonusAwarded) {
+      this.state.dailyBonusAwarded = true;
+      this.addXP(50);
+      this.triggerDailyGoalCelebration();
+    }
+
+    this.saveState();
+  }
+
+  triggerDailyGoalCelebration() {
+    this.playTone('xp');
+    if (this.elements && this.elements.goalCelebrationOverlay) {
+      this.elements.goalCelebrationOverlay.classList.add('active');
+    }
   }
 
   addXP(amount) {
@@ -195,9 +236,16 @@ class KroVocabApp {
 
   // --- DOM INITIALIZATION ---
   initDOM() {
+    this.quizMode = 'blitz'; // 'blitz' oder 'spika'
+
     this.elements = {
       headerStreak: document.getElementById('header-streak-num'),
       headerXp: document.getElementById('header-xp-num'),
+      headerGoalPill: document.getElementById('header-goal-pill'),
+      headerGoalNum: document.getElementById('header-goal-num'),
+      btnToggleDirection: document.getElementById('btn-toggle-direction'),
+      dirFlagFrom: document.getElementById('dir-flag-from'),
+      dirFlagTo: document.getElementById('dir-flag-to'),
       categoryBar: document.getElementById('category-filter-bar'),
       
       // Views
@@ -218,11 +266,28 @@ class KroVocabApp {
       btnFlip: document.getElementById('btn-swipe-flip'),
       btnKnow: document.getElementById('btn-swipe-know'),
       
-      // Quiz
+      // Quiz & Spika
+      btnModeBlitz: document.getElementById('btn-mode-blitz'),
+      btnModeSpika: document.getElementById('btn-mode-spika'),
+      quizBlitzSection: document.getElementById('quiz-blitz-section'),
+      quizSpikaSection: document.getElementById('quiz-spika-section'),
       quizScore: document.getElementById('quiz-score-val'),
       quizTimerFill: document.getElementById('quiz-timer-fill'),
       quizWord: document.getElementById('quiz-word'),
+      quizQuestionSub: document.getElementById('quiz-question-sub'),
       quizOptions: document.getElementById('quiz-options-grid'),
+      spikaScenarioCat: document.getElementById('spika-scenario-cat'),
+      spikaScoreVal: document.getElementById('spika-score-val'),
+      spikaScenarioEmoji: document.getElementById('spika-scenario-emoji'),
+      spikaScenarioTitle: document.getElementById('spika-scenario-title'),
+      spikaScenarioDesc: document.getElementById('spika-scenario-desc'),
+      spikaScenarioPrompt: document.getElementById('spika-scenario-prompt'),
+      spikaOptionsList: document.getElementById('spika-options-list'),
+      spikaFeedbackBox: document.getElementById('spika-feedback-box'),
+      spikaFeedbackTitle: document.getElementById('spika-feedback-title'),
+      spikaFeedbackText: document.getElementById('spika-feedback-text'),
+      btnSpikaAudio: document.getElementById('btn-spika-audio'),
+      btnSpikaNext: document.getElementById('btn-spika-next'),
       
       // Match
       matchGrid: document.getElementById('match-grid'),
@@ -243,12 +308,18 @@ class KroVocabApp {
       inputDe: document.getElementById('modal-input-de'),
       inputExHr: document.getElementById('modal-input-ex-hr'),
       inputExDe: document.getElementById('modal-input-ex-de'),
+
+      // Daily Goal Celebration Modal
+      goalCelebrationOverlay: document.getElementById('goal-celebration-overlay'),
+      btnCloseGoalCeleb: document.getElementById('btn-close-goal-celeb'),
       
       // Stats
       levelBadge: document.getElementById('stats-level-badge'),
       levelTitle: document.getElementById('stats-level-title'),
       levelDesc: document.getElementById('stats-level-desc'),
       xpBarFill: document.getElementById('stats-xp-bar-fill'),
+      statsDailyBadge: document.getElementById('stats-daily-badge'),
+      statsDailyBarFill: document.getElementById('stats-daily-bar-fill'),
       statsStreak: document.getElementById('stats-streak-days'),
       statsTotalWords: document.getElementById('stats-total-words'),
       statsMastered: document.getElementById('stats-mastered-words'),
@@ -259,6 +330,7 @@ class KroVocabApp {
 
     this.renderCategoryBar();
     this.updateHeaderStats();
+    this.updateDirectionUI();
   }
 
   // --- EVENTS BINDING ---
@@ -270,6 +342,35 @@ class KroVocabApp {
         this.switchView(viewName);
       });
     });
+
+    // Direction Toggle Button
+    if (this.elements.btnToggleDirection) {
+      this.elements.btnToggleDirection.addEventListener('click', () => {
+        this.toggleDirection();
+      });
+    }
+
+    // Quiz Modus Switcher (Blitz vs Spika)
+    if (this.elements.btnModeBlitz && this.elements.btnModeSpika) {
+      this.elements.btnModeBlitz.addEventListener('click', () => this.switchQuizMode('blitz'));
+      this.elements.btnModeSpika.addEventListener('click', () => this.switchQuizMode('spika'));
+    }
+
+    // Daily Goal Celebration Close
+    if (this.elements.btnCloseGoalCeleb) {
+      this.elements.btnCloseGoalCeleb.addEventListener('click', () => {
+        if (this.elements.goalCelebrationOverlay) {
+          this.elements.goalCelebrationOverlay.classList.remove('active');
+        }
+      });
+    }
+    if (this.elements.goalCelebrationOverlay) {
+      this.elements.goalCelebrationOverlay.addEventListener('click', (e) => {
+        if (e.target === this.elements.goalCelebrationOverlay) {
+          this.elements.goalCelebrationOverlay.classList.remove('active');
+        }
+      });
+    }
 
     // Swipe buttons
     this.elements.btnRepeat.addEventListener('click', () => this.handleSwipeChoice(false));
@@ -360,7 +461,11 @@ class KroVocabApp {
     if (this.currentView === 'swipe') {
       this.initSwipeDeck();
     } else if (this.currentView === 'quiz') {
-      this.startQuiz();
+      if (this.quizMode === 'spika') {
+        this.startSpikaTrainer();
+      } else {
+        this.startQuiz();
+      }
     } else if (this.currentView === 'match') {
       this.initMatchGame();
     } else if (this.currentView === 'list') {
@@ -389,6 +494,39 @@ class KroVocabApp {
     if (this.elements.headerXp) {
       this.elements.headerXp.textContent = this.state.xp;
     }
+    const goal = this.state.dailyGoal || 10;
+    const count = this.state.dailyCount || 0;
+    if (this.elements.headerGoalNum) {
+      this.elements.headerGoalNum.textContent = `${count}/${goal}${count >= goal ? ' ✅' : ''}`;
+    }
+    if (this.elements.headerGoalPill) {
+      this.elements.headerGoalPill.classList.toggle('completed', count >= goal);
+    }
+  }
+
+  toggleDirection() {
+    this.state.direction = (this.state.direction === 'hr-de') ? 'de-hr' : 'hr-de';
+    this.saveState();
+    this.playTone('flip');
+    this.updateDirectionUI();
+
+    if (this.currentView === 'swipe') {
+      this.renderCurrentCard();
+    } else if (this.currentView === 'quiz' && this.quizMode === 'blitz') {
+      this.startQuiz();
+    }
+  }
+
+  updateDirectionUI() {
+    if (!this.elements || !this.elements.dirFlagFrom) return;
+    const isHrDe = (this.state.direction !== 'de-hr');
+    this.elements.dirFlagFrom.textContent = isHrDe ? '🇭🇷' : '🇩🇪';
+    this.elements.dirFlagTo.textContent = isHrDe ? '🇩🇪' : '🇭🇷';
+    if (this.elements.btnToggleDirection) {
+      this.elements.btnToggleDirection.title = isHrDe 
+        ? 'Richtung: Kroatisch ➜ Deutsch (Tippen zum Wechseln)' 
+        : 'Richtung: Deutsch ➜ Kroatisch (Tippen zum Wechseln)';
+    }
   }
 
   getLevelInfo(xp) {
@@ -406,6 +544,17 @@ class KroVocabApp {
     if (this.elements.levelDesc) this.elements.levelDesc.textContent = lvl.desc;
     if (this.elements.statsStreak) this.elements.statsStreak.textContent = this.state.streak;
     
+    // Daily Mission Progress
+    const goal = this.state.dailyGoal || 10;
+    const count = this.state.dailyCount || 0;
+    if (this.elements.statsDailyBadge) {
+      this.elements.statsDailyBadge.textContent = `${count} / ${goal} erledigt ${count >= goal ? '✅' : ''}`;
+    }
+    if (this.elements.statsDailyBarFill) {
+      const pct = Math.min(100, Math.round((count / goal) * 100));
+      this.elements.statsDailyBarFill.style.width = `${pct}%`;
+    }
+
     // Progress calculation
     const progress = Math.min(100, Math.max(0, ((this.state.xp - lvl.min) / (lvl.next - lvl.min)) * 100));
     if (this.elements.xpBarFill) this.elements.xpBarFill.style.width = `${progress}%`;
@@ -458,24 +607,25 @@ class KroVocabApp {
     cardEl.id = 'active-card';
 
     const catName = (this.categories && this.categories[item.category]) ? this.categories[item.category].name : 'Allgemein';
+    const isHrDe = (this.state.direction !== 'de-hr');
 
     cardEl.innerHTML = `
       <div class="stamp stamp-know">ZNAM ✅</div>
       <div class="stamp stamp-repeat">PONOVI ❌</div>
       
       <div class="card-inner">
-        <!-- Vorderseite: Kroatisch -->
+        <!-- Vorderseite -->
         <div class="card-face card-front">
           <div class="card-top-bar">
             <span class="card-cat-tag">${catName}</span>
-            <button class="card-audio-btn" title="Kroatisch anhören" id="card-audio-front">🔊</button>
+            ${isHrDe ? `<button class="card-audio-btn" title="Kroatisch anhören" id="card-audio-front">🔊</button>` : ''}
           </div>
 
           <div class="card-center-content">
-            <span class="word-label">Hrvatski</span>
-            <div class="vocab-term">${item.hr}</div>
+            <span class="word-label">${isHrDe ? 'Hrvatski' : 'Njemački (Deutsch)'}</span>
+            <div class="vocab-term">${isHrDe ? item.hr : item.de}</div>
             
-            ${item.exampleHr ? `
+            ${isHrDe && item.exampleHr ? `
               <div class="vocab-example-box">
                 <div class="example-hr">"${item.exampleHr}"</div>
               </div>
@@ -487,21 +637,21 @@ class KroVocabApp {
           </div>
         </div>
 
-        <!-- Rückseite: Deutsch -->
+        <!-- Rückseite -->
         <div class="card-face card-back">
           <div class="card-top-bar">
             <span class="card-cat-tag">${catName}</span>
-            <button class="card-audio-btn" id="card-audio-back">🔊</button>
+            <button class="card-audio-btn" id="card-audio-back" title="Kroatisch anhören">🔊</button>
           </div>
 
           <div class="card-center-content">
-            <span class="word-label" style="color: #60A5FA;">Bedeutung (Deutsch)</span>
-            <div class="vocab-term" style="font-size: 24px; color: #F8FAFC;">${item.de}</div>
+            <span class="word-label" style="color: #60A5FA;">${isHrDe ? 'Bedeutung (Deutsch)' : 'Hrvatski (Kroatisch)'}</span>
+            <div class="vocab-term" style="font-size: 24px; color: #F8FAFC;">${isHrDe ? item.de : item.hr}</div>
             
-            ${item.exampleDe ? `
+            ${item.exampleHr ? `
               <div class="vocab-example-box" style="border-left-color: var(--accent-green);">
                 <div class="example-hr">"${item.exampleHr}"</div>
-                <div class="example-de">${item.exampleDe}</div>
+                ${item.exampleDe ? `<div class="example-de">${item.exampleDe}</div>` : ''}
               </div>
             ` : ''}
           </div>
@@ -516,15 +666,22 @@ class KroVocabApp {
     this.elements.swipeDeck.appendChild(cardEl);
     this.activeCardEl = cardEl;
 
-    // Audio Buttons
-    cardEl.querySelector('#card-audio-front').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.speakCroatian(item.hr);
-    });
-    cardEl.querySelector('#card-audio-back').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.speakCroatian(item.hr);
-    });
+    // Audio Buttons (sprechen immer die kroatische Version)
+    const audioFront = cardEl.querySelector('#card-audio-front');
+    if (audioFront) {
+      audioFront.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.speakCroatian(item.hr);
+      });
+    }
+
+    const audioBack = cardEl.querySelector('#card-audio-back');
+    if (audioBack) {
+      audioBack.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.speakCroatian(item.hr);
+      });
+    }
 
     // Touch & Pointer Gesture Binding
     this.bindCardGestures(cardEl);
@@ -716,6 +873,7 @@ class KroVocabApp {
       this.cardQueue.push(item);
     }
 
+    this.incrementDailyProgress(1);
     this.saveState();
 
     // Render next card after transition
@@ -725,8 +883,23 @@ class KroVocabApp {
   }
 
   // =========================================================
-  // 2. BLITZ-QUIZ ENGINE
+  // 2. BLITZ-QUIZ & SPIKA-TRAINER ENGINE
   // =========================================================
+  switchQuizMode(mode) {
+    this.quizMode = mode;
+    if (this.elements.btnModeBlitz) this.elements.btnModeBlitz.classList.toggle('active', mode === 'blitz');
+    if (this.elements.btnModeSpika) this.elements.btnModeSpika.classList.toggle('active', mode === 'spika');
+
+    if (this.elements.quizBlitzSection) this.elements.quizBlitzSection.style.display = (mode === 'blitz') ? 'block' : 'none';
+    if (this.elements.quizSpikaSection) this.elements.quizSpikaSection.style.display = (mode === 'spika') ? 'block' : 'none';
+
+    if (mode === 'blitz') {
+      this.startQuiz();
+    } else {
+      this.startSpikaTrainer();
+    }
+  }
+
   startQuiz() {
     clearInterval(this.quizTimer);
     const pool = this.getActiveVocab();
@@ -751,7 +924,14 @@ class KroVocabApp {
     }
 
     const currentItem = this.quizQueue[this.quizIndex];
-    this.elements.quizWord.textContent = currentItem.hr;
+    const isHrDe = (this.state.direction !== 'de-hr');
+
+    if (this.elements.quizQuestionSub) {
+      this.elements.quizQuestionSub.textContent = isHrDe 
+        ? "Was bedeutet auf Deutsch?" 
+        : "Kako se kaže na hrvatskom? (Kroatisch)";
+    }
+    this.elements.quizWord.textContent = isHrDe ? currentItem.hr : currentItem.de;
 
     // Pick 3 wrong options from all vocab
     const allVocab = [...this.vocab, ...this.state.customVocab];
@@ -766,7 +946,8 @@ class KroVocabApp {
     options.forEach(opt => {
       const btn = document.createElement('button');
       btn.className = 'quiz-option-btn';
-      btn.innerHTML = `<span>${opt.de}</span> <span>➜</span>`;
+      const optText = isHrDe ? opt.de : opt.hr;
+      btn.innerHTML = `<span>${optText}</span> <span>➜</span>`;
       btn.addEventListener('click', () => this.handleQuizAnswer(btn, opt.id === currentItem.id, currentItem));
       this.elements.quizOptions.appendChild(btn);
     });
@@ -796,17 +977,25 @@ class KroVocabApp {
     const allBtns = this.elements.quizOptions.querySelectorAll('.quiz-option-btn');
     allBtns.forEach(b => b.style.pointerEvents = 'none');
 
+    const isHrDe = (this.state.direction !== 'de-hr');
+    const targetText = isHrDe ? currentItem.de : currentItem.hr;
+
+    this.incrementDailyProgress(1);
+
     if (isCorrect) {
       if (clickedBtn) clickedBtn.classList.add('correct');
       this.quizScore += 20;
       this.playTone('correct');
       this.addXP(20);
+      if (!isHrDe) {
+        this.speakCroatian(currentItem.hr);
+      }
     } else {
       if (clickedBtn) clickedBtn.classList.add('wrong');
       this.playTone('wrong');
       // Highlight correct answer
       allBtns.forEach(b => {
-        if (b.textContent.includes(currentItem.de)) {
+        if (b.textContent.includes(targetText)) {
           b.classList.add('correct');
         }
       });
@@ -830,6 +1019,101 @@ class KroVocabApp {
         <button class="modal-btn-submit" onclick="app.startQuiz()">Noch eine Runde</button>
       </div>
     `;
+  }
+
+  // --- SPIKA-TRAINER ENGINE (Echte Konversation & Chunks) ---
+  startSpikaTrainer() {
+    const dialogs = (typeof SPIKA_DIALOGS !== 'undefined') ? SPIKA_DIALOGS : (window.SPIKA_DIALOGS || []);
+    if (!dialogs || dialogs.length === 0) return;
+
+    this.spikaQueue = [...dialogs].sort(() => Math.random() - 0.5);
+    this.spikaIndex = 0;
+    this.spikaScore = 0;
+    if (this.elements.spikaScoreVal) this.elements.spikaScoreVal.textContent = `${this.spikaScore} Pkt`;
+    this.renderSpikaScenario();
+  }
+
+  renderSpikaScenario() {
+    if (this.spikaIndex >= this.spikaQueue.length) {
+      if (this.elements.spikaScenarioEmoji) this.elements.spikaScenarioEmoji.textContent = "🏆";
+      if (this.elements.spikaScenarioTitle) this.elements.spikaScenarioTitle.textContent = "Spika-Trainer gemeistert!";
+      if (this.elements.spikaScenarioDesc) this.elements.spikaScenarioDesc.textContent = `Du hast alle 12 Alltagssituationen gemeistert und ${this.spikaScore} Punkte erzielt! Dein Gespür für authentische kroatische Reaktionen ist exzellent.`;
+      if (this.elements.spikaScenarioPrompt) this.elements.spikaScenarioPrompt.textContent = "";
+      if (this.elements.spikaOptionsList) {
+        this.elements.spikaOptionsList.innerHTML = `
+          <button class="modal-btn-submit" onclick="app.startSpikaTrainer()" style="margin-top: 10px;">Nochmal von vorne üben</button>
+        `;
+      }
+      if (this.elements.spikaFeedbackBox) this.elements.spikaFeedbackBox.style.display = 'none';
+      return;
+    }
+
+    const scenario = this.spikaQueue[this.spikaIndex];
+    this.spikaActiveScenario = scenario;
+
+    if (this.elements.spikaScenarioCat) this.elements.spikaScenarioCat.textContent = `${scenario.emoji || '💬'} ${scenario.category.toUpperCase()}`;
+    if (this.elements.spikaScenarioEmoji) this.elements.spikaScenarioEmoji.textContent = scenario.emoji || '💬';
+    if (this.elements.spikaScenarioTitle) this.elements.spikaScenarioTitle.textContent = scenario.title;
+    if (this.elements.spikaScenarioDesc) this.elements.spikaScenarioDesc.textContent = scenario.situation;
+    if (this.elements.spikaScenarioPrompt) this.elements.spikaScenarioPrompt.textContent = scenario.prompt;
+
+    if (this.elements.spikaFeedbackBox) this.elements.spikaFeedbackBox.style.display = 'none';
+
+    // Shuffle options
+    const shuffledOptions = [...scenario.options].sort(() => Math.random() - 0.5);
+    this.elements.spikaOptionsList.innerHTML = '';
+
+    shuffledOptions.forEach(opt => {
+      const card = document.createElement('div');
+      card.className = 'spika-option-card';
+      card.textContent = opt.text;
+      card.addEventListener('click', () => this.handleSpikaChoice(opt, card, scenario));
+      this.elements.spikaOptionsList.appendChild(card);
+    });
+  }
+
+  handleSpikaChoice(chosenOpt, clickedCard, scenario) {
+    const allCards = this.elements.spikaOptionsList.querySelectorAll('.spika-option-card');
+    allCards.forEach(c => c.style.pointerEvents = 'none');
+
+    this.incrementDailyProgress(1);
+
+    if (chosenOpt.isCorrect) {
+      clickedCard.classList.add('correct');
+      this.spikaScore += 25;
+      this.playTone('correct');
+      this.addXP(25);
+    } else {
+      clickedCard.classList.add('wrong');
+      this.playTone('wrong');
+      allCards.forEach(c => {
+        const isCorrectCard = scenario.options.find(o => o.isCorrect && o.text === c.textContent);
+        if (isCorrectCard) c.classList.add('correct');
+      });
+    }
+
+    if (this.elements.spikaScoreVal) this.elements.spikaScoreVal.textContent = `${this.spikaScore} Pkt`;
+
+    // Zeige Feedback Box mit Spika-Tipp
+    if (this.elements.spikaFeedbackBox) {
+      this.elements.spikaFeedbackBox.style.display = 'block';
+      this.elements.spikaFeedbackTitle.textContent = chosenOpt.isCorrect ? '✅ Odlično! Spika-Tipp:' : '💡 Spika-Tipp:';
+      this.elements.spikaFeedbackText.textContent = chosenOpt.feedback;
+
+      // Audio Button spricht die korrekte kroatische Formulierung
+      const correctOpt = scenario.options.find(o => o.isCorrect);
+      const cleanSpeech = correctOpt ? correctOpt.text.replace(/[»«"]/g, '').trim() : '';
+      if (this.elements.btnSpikaAudio) {
+        this.elements.btnSpikaAudio.onclick = () => this.speakCroatian(cleanSpeech);
+      }
+
+      if (this.elements.btnSpikaNext) {
+        this.elements.btnSpikaNext.onclick = () => {
+          this.spikaIndex++;
+          this.renderSpikaScenario();
+        };
+      }
+    }
   }
 
   // =========================================================
@@ -938,6 +1222,7 @@ class KroVocabApp {
             this.state.bestMatchTime = timeSpent;
             isRecord = true;
           }
+          this.incrementDailyProgress(2);
           this.saveState();
           setTimeout(() => {
             const timeStr = this.elements.matchTimerText.textContent;

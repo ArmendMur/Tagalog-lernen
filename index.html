@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23090D16'/><circle cx='50' cy='50' r='36' fill='%233B82F6'/><path d='M30 40h40v20H30z' fill='%23EF4444'/><text x='50' y='63' font-size='38' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif' font-weight='bold'>HR</text></svg>">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=2.4.0">
+  <link rel="stylesheet" href="styles.css?v=2.5.0">
 </head>
 <body>
 
@@ -30,7 +30,18 @@
         <h1>Kro<span>Vocab</span></h1>
       </div>
 
+      <!-- Lernrichtung Toggle: HR <-> DE -->
+      <button class="direction-toggle-btn" id="btn-toggle-direction" title="Lernrichtung umkehren">
+        <span id="dir-flag-from">🇭🇷</span>
+        <span class="dir-arrow">⇄</span>
+        <span id="dir-flag-to">🇩🇪</span>
+      </button>
+
       <div class="header-stats">
+        <div class="stat-pill goal" id="header-goal-pill" title="Tagesziel: 10 Wörter geübt">
+          <span>🎯</span>
+          <span id="header-goal-num">0/10</span>
+        </div>
         <div class="stat-pill streak" title="Aktueller Streak">
           <span>🔥</span>
           <span id="header-streak-num">1</span>
@@ -64,30 +75,71 @@
         </div>
       </section>
 
-      <!-- 2. BLITZ-QUIZ VIEW -->
+      <!-- 2. BLITZ-QUIZ & SPIKA-TRAINER VIEW -->
       <section id="view-quiz" class="view">
         <div class="quiz-container">
-          <div>
-            <div class="quiz-header">
-              <span style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">⚡ BLITZ-QUIZ</span>
-              <div class="quiz-score-badge" id="quiz-score-val">0 Pkt</div>
-            </div>
-            
-            <div class="quiz-timer-bar">
-              <div class="quiz-timer-fill" id="quiz-timer-fill"></div>
-            </div>
-
-            <div class="quiz-question-box">
-              <div class="quiz-question-sub">Was bedeutet auf Deutsch?</div>
-              <div class="quiz-question-word" id="quiz-word">...</div>
-            </div>
-
-            <div class="quiz-options-grid" id="quiz-options-grid"></div>
+          
+          <!-- Modus-Umschalter: Blitz-Quiz vs. Spika-Dialoge -->
+          <div class="quiz-mode-selector">
+            <button class="mode-seg-btn active" id="btn-mode-blitz">⚡ Blitz-Quiz</button>
+            <button class="mode-seg-btn" id="btn-mode-spika">💬 Spika-Dialoge</button>
           </div>
 
-          <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">
-            Wähle die passende deutsche Bedeutung schnell aus!
+          <!-- 2A. BLITZ-QUIZ MODUS -->
+          <div id="quiz-blitz-section" class="quiz-subview active">
+            <div>
+              <div class="quiz-header">
+                <span style="font-size: 13px; font-weight: 700; color: var(--text-secondary);" id="quiz-header-label">⚡ BLITZ-QUIZ</span>
+                <div class="quiz-score-badge" id="quiz-score-val">0 Pkt</div>
+              </div>
+              
+              <div class="quiz-timer-bar">
+                <div class="quiz-timer-fill" id="quiz-timer-fill"></div>
+              </div>
+
+              <div class="quiz-question-box">
+                <div class="quiz-question-sub" id="quiz-question-sub">Was bedeutet auf Deutsch?</div>
+                <div class="quiz-question-word" id="quiz-word">...</div>
+              </div>
+
+              <div class="quiz-options-grid" id="quiz-options-grid"></div>
+            </div>
+
+            <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 6px;" id="quiz-footer-hint">
+              Wähle die passende Bedeutung schnell aus!
+            </div>
           </div>
+
+          <!-- 2B. SPIKA-DIALOGE MODUS -->
+          <div id="quiz-spika-section" class="quiz-subview" style="display: none;">
+            <div class="spika-header">
+              <span class="spika-badge" id="spika-scenario-cat">☕ KAFIC & AUSGEHEN</span>
+              <div class="quiz-score-badge" id="spika-score-val">0 Pkt</div>
+            </div>
+
+            <div class="spika-scenario-card">
+              <div class="spika-scenario-top">
+                <span class="spika-emoji" id="spika-scenario-emoji">☕</span>
+                <div class="spika-scenario-title" id="spika-scenario-title">Kaffee bestellen wie ein Local</div>
+              </div>
+              <p class="spika-scenario-text" id="spika-scenario-desc">Der Kellner kommt an deinen Tisch im Café...</p>
+              <div class="spika-scenario-prompt" id="spika-scenario-prompt">Wie bestellst du ganz entspannt wie ein Einheimischer?</div>
+            </div>
+
+            <div class="spika-options-list" id="spika-options-list">
+              <!-- Dynamische Optionen via JS -->
+            </div>
+
+            <div class="spika-feedback-box" id="spika-feedback-box" style="display: none;">
+              <div class="spika-feedback-title" id="spika-feedback-title">💡 Spika-Tipp:</div>
+              <p class="spika-feedback-text" id="spika-feedback-text"></p>
+              <div class="spika-feedback-actions">
+                <button class="spika-audio-btn" id="btn-spika-audio" title="Aussprache anhören">🔊 Anhören</button>
+                <button class="spika-next-btn" id="btn-spika-next">Nächster Dialog ➜</button>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -143,6 +195,20 @@
             </div>
           </div>
 
+          <!-- 3-Minuten Tagesziel Karte -->
+          <div class="metric-card" style="text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="metric-label" style="font-weight: 700; color: #FFFFFF;">🎯 3-Minuten Tagesziel</span>
+              <span style="font-size: 13px; font-weight: 700; color: var(--accent-green);" id="stats-daily-badge">0 / 10 erledigt</span>
+            </div>
+            <div class="progress-bar-wrap" style="margin-top: 4px; height: 8px;">
+              <div class="progress-bar-fill" id="stats-daily-bar-fill" style="width: 0%; background: linear-gradient(90deg, var(--accent-green), var(--accent-gold));"></div>
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 8px;">
+              Übe täglich 10 Vokabeln oder Dialoge für den Streak & +50 XP Bonus!
+            </div>
+          </div>
+
           <div class="stats-grid-2col">
             <div class="metric-card">
               <div class="metric-label">🔥 Tages-Streak</div>
@@ -188,7 +254,7 @@
             <button id="btn-force-update" class="modal-btn-submit" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-light); font-size: 13px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
               <span>🔄</span> <span>App aktualisieren / Cache leeren</span>
             </button>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.4.0 · Aktualisiert bei Änderungen automatisch</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.5.0 · Aktualisiert bei Änderungen automatisch</div>
           </div>
 
         </div>
@@ -204,7 +270,7 @@
       </button>
       <button class="tab-item" data-view="quiz">
         <span class="tab-icon">⚡</span>
-        <span>Blitz-Quiz</span>
+        <span>Quiz & Dialog</span>
       </button>
       <button class="tab-item" data-view="match">
         <span class="tab-icon">🧩</span>
@@ -237,16 +303,29 @@
       </div>
     </div>
 
+    <!-- Celebration Modal: Tagesziel erreicht -->
+    <div class="modal-overlay goal-celeb-modal" id="goal-celebration-overlay">
+      <div class="modal-sheet goal-celeb-sheet">
+        <div style="font-size: 52px; margin-bottom: 8px;">🎯🎉</div>
+        <h2 style="font-size: 22px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">Tagesziel gemeistert!</h2>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+          Du hast deine 10 Vokabeln / Dialoge für heute erfolgreich trainiert.
+        </p>
+        <div class="goal-reward-badge">⭐ +50 BONUS XP ERHALTEN!</div>
+        <button class="modal-btn-submit" id="btn-close-goal-celeb" style="margin-top: 14px;">Idemo dalje! (Super!)</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- Scripts mit Cache-Busting Version Query Parameter -->
-  <script src="vocab-data.js?v=2.4.0"></script>
-  <script src="app.js?v=2.4.0"></script>
+  <script src="vocab-data.js?v=2.5.0"></script>
+  <script src="app.js?v=2.5.0"></script>
   <script>
     // Automatisches Service Worker Update-Handling
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=2.4.0').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=2.5.0').then(reg => {
           // Prüfe bei jedem Seitenaufruf sofort auf Updates
           reg.update();
 
