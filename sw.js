@@ -1,5 +1,5 @@
 // Service Worker für KroVocab - Network-First mit Offline-Cache-Fallback
-const CACHE_VERSION = 'krovocab-v2.5.1';
+const CACHE_VERSION = 'krovocab-v2.5.2';
 
 const ASSETS_TO_CACHE = [
   './',

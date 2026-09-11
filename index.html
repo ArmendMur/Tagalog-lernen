@@ -16,7 +16,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23090D16'/><circle cx='50' cy='50' r='36' fill='%233B82F6'/><path d='M30 40h40v20H30z' fill='%23EF4444'/><text x='50' y='63' font-size='38' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif' font-weight='bold'>HR</text></svg>">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=2.5.1">
+  <link rel="stylesheet" href="styles.css?v=2.5.2">
 </head>
 <body>
 
@@ -30,12 +30,19 @@
         <h1>Kro<span>Vocab</span></h1>
       </div>
 
-      <!-- Lernrichtung Toggle: HR <-> DE -->
-      <button class="direction-toggle-btn" id="btn-toggle-direction" title="Lernrichtung umkehren">
-        <span id="dir-flag-from">🇭🇷</span>
-        <span class="dir-arrow">⇄</span>
-        <span id="dir-flag-to">🇩🇪</span>
-      </button>
+      <div style="display: flex; align-items: center; gap: 5px;">
+        <!-- Lernrichtung Toggle: HR <-> DE -->
+        <button class="direction-toggle-btn" id="btn-toggle-direction" title="Lernrichtung umkehren">
+          <span id="dir-flag-from">🇭🇷</span>
+          <span class="dir-arrow">⇄</span>
+          <span id="dir-flag-to">🇩🇪</span>
+        </button>
+
+        <!-- Soundeffekte Toggle: 🔊 / 🔇 -->
+        <button class="sound-toggle-btn" id="btn-toggle-sound" title="Soundeffekte an/aus">
+          <span id="sound-toggle-icon">🔊</span>
+        </button>
+      </div>
 
       <div class="header-stats">
         <div class="stat-pill goal" id="header-goal-pill" title="Tagesziel: 10 Wörter geübt">
@@ -256,11 +263,25 @@
             </p>
           </div>
 
+          <!-- Soundeffekte Einstellung -->
+          <div class="metric-card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px;">
+            <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
+              <span style="font-size: 22px;" id="profile-sound-icon">🔊</span>
+              <div>
+                <div style="font-size: 13.5px; font-weight: 700; color: #FFFFFF;">Soundeffekte</div>
+                <div style="font-size: 11px; color: var(--text-secondary);" id="profile-sound-status-desc">Cutes Audio-Feedback beim Lernen</div>
+              </div>
+            </div>
+            <button id="btn-profile-toggle-sound" class="stat-pill" style="cursor: pointer; font-size: 12px; font-weight: 700; padding: 6px 12px; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3); color: var(--accent-green);">
+              <span id="profile-sound-btn-text">Aktiviert</span>
+            </button>
+          </div>
+
           <div style="margin-top: 6px; text-align: center;">
             <button id="btn-force-update" class="modal-btn-submit" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-light); font-size: 13px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
               <span>🔄</span> <span>App aktualisieren / Cache leeren</span>
             </button>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.5.1 · Aktualisiert bei Änderungen automatisch</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.5.2 · Aktualisiert bei Änderungen automatisch</div>
           </div>
 
         </div>
@@ -325,13 +346,13 @@
   </div>
 
   <!-- Scripts mit Cache-Busting Version Query Parameter -->
-  <script src="vocab-data.js?v=2.5.1"></script>
-  <script src="app.js?v=2.5.1"></script>
+  <script src="vocab-data.js?v=2.5.2"></script>
+  <script src="app.js?v=2.5.2"></script>
   <script>
     // Automatisches Service Worker Update-Handling
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=2.5.1').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=2.5.2').then(reg => {
           // Prüfe bei jedem Seitenaufruf sofort auf Updates
           reg.update();
 

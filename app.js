@@ -69,7 +69,8 @@ class KroVocabApp {
       srs: {}, // { [id]: { level: 1|2|3, correct: 0, wrong: 0, lastSeen: timestamp } }
       favorites: [],
       customVocab: [],
-      bestMatchTime: null
+      bestMatchTime: null,
+      soundEnabled: true
     };
 
     try {
@@ -146,7 +147,7 @@ class KroVocabApp {
   }
 
   triggerDailyGoalCelebration() {
-    this.playTone('xp');
+    this.playTone('fanfare');
     if (this.elements && this.elements.goalCelebrationOverlay) {
       this.elements.goalCelebrationOverlay.classList.add('active');
     }
@@ -168,50 +169,214 @@ class KroVocabApp {
     }
   }
 
+  toggleSound() {
+    this.state.soundEnabled = (this.state.soundEnabled === false) ? true : false;
+    this.saveState();
+    this.updateSoundUI();
+    if (this.state.soundEnabled) {
+      this.playTone('soundOn');
+    }
+  }
+
+  updateSoundUI() {
+    const isEnabled = (this.state.soundEnabled !== false);
+
+    // Header Toggle Button
+    if (this.elements && this.elements.btnToggleSound) {
+      this.elements.btnToggleSound.classList.toggle('muted', !isEnabled);
+      this.elements.btnToggleSound.title = isEnabled 
+        ? 'Soundeffekte: An (Tippen zum Stummschalten)' 
+        : 'Soundeffekte: Aus (Tippen zum Einschalten)';
+    }
+    if (this.elements && this.elements.soundToggleIcon) {
+      this.elements.soundToggleIcon.textContent = isEnabled ? '🔊' : '🔇';
+    }
+
+    // Profil Toggle Button & Text
+    if (this.elements && this.elements.profileSoundIcon) {
+      this.elements.profileSoundIcon.textContent = isEnabled ? '🔊' : '🔇';
+    }
+    if (this.elements && this.elements.profileSoundStatusDesc) {
+      this.elements.profileSoundStatusDesc.textContent = isEnabled 
+        ? 'Cutes Audio-Feedback beim Lernen ist aktiv' 
+        : 'Alle Soundeffekte sind stummgeschaltet';
+    }
+    if (this.elements && this.elements.profileSoundBtnText) {
+      this.elements.profileSoundBtnText.textContent = isEnabled ? 'Aktiviert' : 'Stumm';
+    }
+    if (this.elements && this.elements.btnProfileToggleSound) {
+      this.elements.btnProfileToggleSound.style.background = isEnabled 
+        ? 'rgba(16, 185, 129, 0.15)' 
+        : 'rgba(239, 68, 68, 0.15)';
+      this.elements.btnProfileToggleSound.style.borderColor = isEnabled 
+        ? 'rgba(16, 185, 129, 0.3)' 
+        : 'rgba(239, 68, 68, 0.3)';
+      this.elements.btnProfileToggleSound.style.color = isEnabled 
+        ? 'var(--accent-green)' 
+        : 'var(--accent-hr-red)';
+    }
+  }
+
   playTone(type) {
+    if (this.state.soundEnabled === false) return;
     if (!this.audioCtx) return;
     if (this.audioCtx.state === 'suspended') {
       this.audioCtx.resume();
     }
 
-    const osc = this.audioCtx.createOscillator();
-    const gain = this.audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(this.audioCtx.destination);
+    const ctx = this.audioCtx;
+    const now = ctx.currentTime;
 
-    const now = this.audioCtx.currentTime;
+    // Hilfsfunktion: Weiche, melodische Note mit sanfter Attack/Decay Hüllkurve
+    const playNote = (freq, startOffset, duration, volume = 0.13, waveType = 'sine') => {
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = waveType;
+        osc.frequency.setValueAtTime(freq, now + startOffset);
 
-    if (type === 'know' || type === 'correct') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(523.25, now); // C5
-      osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.12); // G5
-      gain.gain.setValueAtTime(0.18, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-      osc.start(now);
-      osc.stop(now + 0.2);
-    } else if (type === 'repeat' || type === 'wrong') {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(320, now);
-      osc.frequency.linearRampToValueAtTime(200, now + 0.15);
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-      osc.start(now);
-      osc.stop(now + 0.2);
-    } else if (type === 'flip') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, now);
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-      osc.start(now);
-      osc.stop(now + 0.08);
-    } else if (type === 'xp') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(659.25, now); // E5
-      osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.18); // B5
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
-      osc.start(now);
-      osc.stop(now + 0.22);
+        gain.gain.setValueAtTime(0.0001, now + startOffset);
+        gain.gain.linearRampToValueAtTime(volume, now + startOffset + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + startOffset + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now + startOffset);
+        osc.stop(now + startOffset + duration);
+      } catch (e) {
+        // Audio error fail-safe
+      }
+    };
+
+    switch (type) {
+      case 'know':
+      case 'correct': {
+        // Cutes, glitzerndes Zweiklang-Glockenspiel (E5 -> B5 -> E6 Shimmer)
+        playNote(659.25, 0, 0.14, 0.14, 'sine'); // E5
+        playNote(987.77, 0.05, 0.18, 0.12, 'sine'); // B5
+        playNote(1318.51, 0.09, 0.22, 0.07, 'triangle'); // E6
+        break;
+      }
+
+      case 'repeat':
+      case 'wrong': {
+        // Sanfter, freundlicher Doppel-Boop (kein harter Summer, sondern cutes "Hoppla!")
+        playNote(349.23, 0, 0.09, 0.11, 'sine'); // F4
+        playNote(261.63, 0.06, 0.13, 0.09, 'sine'); // C4
+        break;
+      }
+
+      case 'flip': {
+        // Cuter kleiner Pop / Holz-Flick beim Umdrehen der Karte
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(380, now);
+          osc.frequency.exponentialRampToValueAtTime(720, now + 0.05);
+
+          gain.gain.setValueAtTime(0.09, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.06);
+        } catch (e) {}
+        break;
+      }
+
+      case 'pop':
+      case 'select': {
+        // Cutes Wassertropfen-Blubben beim Kachelauswählen / Button-Tippen
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(980, now + 0.04);
+
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.linearRampToValueAtTime(0.12, now + 0.005);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.07);
+        } catch (e) {}
+        break;
+      }
+
+      case 'deselect': {
+        // Sanfter Rückwärts-Tropfen beim Abwählen einer Kachel
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(780, now);
+          osc.frequency.exponentialRampToValueAtTime(420, now + 0.05);
+
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.06);
+        } catch (e) {}
+        break;
+      }
+
+      case 'match': {
+        // Fröhlicher 3-Ton Glöckchen-Akkord für gefundene Wortpaare
+        playNote(783.99, 0, 0.12, 0.12, 'sine'); // G5
+        playNote(1046.50, 0.05, 0.15, 0.14, 'sine'); // C6
+        playNote(1318.51, 0.10, 0.22, 0.10, 'triangle'); // E6
+        break;
+      }
+
+      case 'xp': {
+        // Cutes Münz-Funkeln (wie ein Stern oder Duolingo-Gem)
+        playNote(987.77, 0, 0.08, 0.12, 'sine'); // B5
+        playNote(1318.51, 0.05, 0.22, 0.15, 'sine'); // E6
+        break;
+      }
+
+      case 'fanfare':
+      case 'victory': {
+        // Fröhliche 4-Ton Sieges-Fanfare (C5 -> E5 -> G5 -> C6)
+        playNote(523.25, 0, 0.12, 0.13, 'sine'); // C5
+        playNote(659.25, 0.09, 0.12, 0.13, 'sine'); // E5
+        playNote(783.99, 0.18, 0.14, 0.14, 'sine'); // G5
+        playNote(1046.50, 0.27, 0.35, 0.18, 'triangle'); // C6
+        playNote(1318.51, 0.32, 0.30, 0.08, 'sine'); // E6 Shimmer
+        break;
+      }
+
+      case 'success': {
+        // Cuter "Ta-Da!" Zweiklang beim Hinzufügen eigener Vokabeln
+        playNote(587.33, 0, 0.10, 0.11, 'sine'); // D5
+        playNote(880.00, 0.08, 0.22, 0.14, 'sine'); // A5
+        break;
+      }
+
+      case 'soundOn': {
+        // Freundlicher Bestätigungs-Chirp beim Einschalten
+        playNote(587.33, 0, 0.08, 0.10, 'sine');
+        playNote(880.00, 0.06, 0.12, 0.12, 'sine');
+        break;
+      }
+
+      case 'tap': {
+        // Kaum hörbares, dezentes Mikroticken für Tabs
+        playNote(700, 0, 0.03, 0.04, 'sine');
+        break;
+      }
+
+      default:
+        break;
     }
   }
 
@@ -325,12 +490,21 @@ class KroVocabApp {
       statsMastered: document.getElementById('stats-mastered-words'),
       srsCountLvl1: document.getElementById('srs-count-lvl1'),
       srsCountLvl2: document.getElementById('srs-count-lvl2'),
-      srsCountLvl3: document.getElementById('srs-count-lvl3')
+      srsCountLvl3: document.getElementById('srs-count-lvl3'),
+
+      // Sound Toggle
+      btnToggleSound: document.getElementById('btn-toggle-sound'),
+      soundToggleIcon: document.getElementById('sound-toggle-icon'),
+      btnProfileToggleSound: document.getElementById('btn-profile-toggle-sound'),
+      profileSoundIcon: document.getElementById('profile-sound-icon'),
+      profileSoundBtnText: document.getElementById('profile-sound-btn-text'),
+      profileSoundStatusDesc: document.getElementById('profile-sound-status-desc')
     };
 
     this.renderCategoryBar();
     this.updateHeaderStats();
     this.updateDirectionUI();
+    this.updateSoundUI();
   }
 
   // --- EVENTS BINDING ---
@@ -339,6 +513,7 @@ class KroVocabApp {
     this.elements.tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const viewName = btn.dataset.view;
+        this.playTone('tap');
         this.switchView(viewName);
       });
     });
@@ -347,6 +522,20 @@ class KroVocabApp {
     if (this.elements.btnToggleDirection) {
       this.elements.btnToggleDirection.addEventListener('click', () => {
         this.toggleDirection();
+      });
+    }
+
+    // Sound Toggle Button (Header)
+    if (this.elements.btnToggleSound) {
+      this.elements.btnToggleSound.addEventListener('click', () => {
+        this.toggleSound();
+      });
+    }
+
+    // Sound Toggle Button (Profil-Ansicht)
+    if (this.elements.btnProfileToggleSound) {
+      this.elements.btnProfileToggleSound.addEventListener('click', () => {
+        this.toggleSound();
       });
     }
 
@@ -419,6 +608,7 @@ class KroVocabApp {
       chip.className = `cat-chip ${this.currentCategory === key ? 'active' : ''}`;
       chip.innerHTML = `<span>${cat.icon}</span> <span>${cat.name}</span>`;
       chip.addEventListener('click', () => {
+        this.playTone('tap');
         this.currentCategory = key;
         document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
@@ -585,6 +775,7 @@ class KroVocabApp {
     this.elements.srsCountLvl2.textContent = lvl2;
     this.elements.srsCountLvl3.textContent = lvl3;
     this.elements.statsMastered.textContent = lvl3;
+    this.updateSoundUI();
   }
 
   // =========================================================
@@ -1021,6 +1212,7 @@ class KroVocabApp {
   }
 
   showQuizSummary() {
+    this.playTone('victory');
     this.elements.quizWord.textContent = `Quiz beendet! 🏆`;
     this.elements.quizOptions.innerHTML = `
       <div style="text-align: center; padding: 20px;">
@@ -1120,6 +1312,7 @@ class KroVocabApp {
 
       if (this.elements.btnSpikaNext) {
         this.elements.btnSpikaNext.onclick = () => {
+          this.playTone('tap');
           this.spikaIndex++;
           this.renderSpikaScenario();
         };
@@ -1190,7 +1383,7 @@ class KroVocabApp {
     if (this.selectedMatchTile && this.selectedMatchTile.el === el) {
       el.classList.remove('selected');
       this.selectedMatchTile = null;
-      this.playTone('flip');
+      this.playTone('deselect');
       return;
     }
 
@@ -1199,7 +1392,7 @@ class KroVocabApp {
       this.selectedMatchTile.el.classList.remove('selected');
       this.selectedMatchTile = { el, tile };
       el.classList.add('selected');
-      this.playTone('flip');
+      this.playTone('select');
       return;
     }
 
@@ -1207,7 +1400,7 @@ class KroVocabApp {
       // Erste Kachel ausgewählt
       this.selectedMatchTile = { el, tile };
       el.classList.add('selected');
-      this.playTone('flip');
+      this.playTone('select');
     } else {
       // Zweite Kachel ausgewählt
       const first = this.selectedMatchTile;
@@ -1219,7 +1412,7 @@ class KroVocabApp {
         el.classList.add('matched');
         this.selectedMatchTile = null;
         this.matchedPairsCount++;
-        this.playTone('correct');
+        this.playTone('match');
         this.addXP(25);
 
         if (tile.type === 'hr') this.speakCroatian(tile.text);
@@ -1235,6 +1428,7 @@ class KroVocabApp {
           }
           this.incrementDailyProgress(2);
           this.saveState();
+          this.playTone('victory');
           setTimeout(() => {
             const timeStr = this.elements.matchTimerText.textContent;
             const msg = isRecord 
@@ -1347,6 +1541,7 @@ class KroVocabApp {
     // Reset Form & Close
     this.elements.modalForm.reset();
     this.elements.modalOverlay.classList.remove('active');
+    this.playTone('success');
     this.addXP(30);
 
     alert(`Vokabel "${hr}" erfolgreich hinzugefügt! +30 XP!`);

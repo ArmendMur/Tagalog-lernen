@@ -162,6 +162,34 @@ header.app-header {
   font-weight: 800;
 }
 
+/* Sound Toggle Button in Header */
+.sound-toggle-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.sound-toggle-btn:active {
+  transform: scale(0.90);
+}
+
+.sound-toggle-btn.muted {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  opacity: 0.75;
+}
+
 /* Top Stats Pills */
 .header-stats {
   display: flex;
