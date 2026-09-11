@@ -62,7 +62,8 @@ class KroVocabApp {
       lastActiveDate: new Date().toISOString().split('T')[0],
       srs: {}, // { [id]: { level: 1|2|3, correct: 0, wrong: 0, lastSeen: timestamp } }
       favorites: [],
-      customVocab: []
+      customVocab: [],
+      bestMatchTime: null
     };
 
     try {
@@ -226,6 +227,7 @@ class KroVocabApp {
       // Match
       matchGrid: document.getElementById('match-grid'),
       matchTimerText: document.getElementById('match-timer-val'),
+      matchBestBadge: document.getElementById('match-best-badge'),
       btnRestartMatch: document.getElementById('btn-restart-match'),
       
       // List / Dictionary
@@ -371,6 +373,9 @@ class KroVocabApp {
   // Get active vocab pool based on category
   getActiveVocab() {
     const all = [...this.vocab, ...this.state.customVocab];
+    if (this.currentCategory === 'fav') {
+      return all.filter(item => this.state.favorites.includes(item.id));
+    }
     if (this.currentCategory === 'all') return all;
     return all.filter(item => item.category === this.currentCategory);
   }
@@ -837,6 +842,17 @@ class KroVocabApp {
     this.selectedMatchTile = null;
     this.elements.matchTimerText.textContent = '00:00';
 
+    // Bestzeit Badge aktualisieren
+    if (this.elements.matchBestBadge) {
+      if (this.state.bestMatchTime) {
+        const bm = String(Math.floor(this.state.bestMatchTime / 60)).padStart(2, '0');
+        const bs = String(this.state.bestMatchTime % 60).padStart(2, '0');
+        this.elements.matchBestBadge.textContent = `🏆 Best: ${bm}:${bs}`;
+      } else {
+        this.elements.matchBestBadge.textContent = `🏆 Best: --:--`;
+      }
+    }
+
     const pool = this.getActiveVocab();
     const pairsCount = 6;
     const selectedVocab = [...pool].sort(() => Math.random() - 0.5).slice(0, pairsCount);
@@ -873,15 +889,32 @@ class KroVocabApp {
   }
 
   handleMatchTileClick(el, tile) {
-    if (el.classList.contains('matched') || el.classList.contains('selected')) return;
+    if (el.classList.contains('matched')) return;
+
+    // 1. Wenn die gleiche Kachel nochmal angetippt wird -> Abwählen! (Deselect)
+    if (this.selectedMatchTile && this.selectedMatchTile.el === el) {
+      el.classList.remove('selected');
+      this.selectedMatchTile = null;
+      this.playTone('flip');
+      return;
+    }
+
+    // 2. Wenn eine andere Kachel der gleichen Sprache angetippt wird -> Auswahl umschalten
+    if (this.selectedMatchTile && this.selectedMatchTile.tile.type === tile.type) {
+      this.selectedMatchTile.el.classList.remove('selected');
+      this.selectedMatchTile = { el, tile };
+      el.classList.add('selected');
+      this.playTone('flip');
+      return;
+    }
 
     if (!this.selectedMatchTile) {
-      // First tile selected
+      // Erste Kachel ausgewählt
       this.selectedMatchTile = { el, tile };
       el.classList.add('selected');
       this.playTone('flip');
     } else {
-      // Second tile selected
+      // Zweite Kachel ausgewählt
       const first = this.selectedMatchTile;
       
       if (first.tile.type !== tile.type && first.tile.matchId === tile.matchId) {
@@ -899,11 +932,22 @@ class KroVocabApp {
 
         if (this.matchedPairsCount === 6) {
           clearInterval(this.matchTimerInterval);
+          const timeSpent = this.matchSeconds;
+          let isRecord = false;
+          if (!this.state.bestMatchTime || timeSpent < this.state.bestMatchTime) {
+            this.state.bestMatchTime = timeSpent;
+            isRecord = true;
+          }
+          this.saveState();
           setTimeout(() => {
-            alert(`Fantastično! 🎉 Alle Paare in ${this.elements.matchTimerText.textContent} gefunden! +150 XP!`);
+            const timeStr = this.elements.matchTimerText.textContent;
+            const msg = isRecord 
+              ? `🏆 NEUER REKORD! Alle Paare in ${timeStr} gelöst! +150 XP!` 
+              : `Fantastično! 🎉 Alle Paare in ${timeStr} gefunden! +150 XP!`;
+            alert(msg);
             this.addXP(150);
             this.initMatchGame();
-          }, 500);
+          }, 450);
         }
       } else {
         // Wrong Pair

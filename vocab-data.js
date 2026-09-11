@@ -1868,6 +1868,7 @@ var VOCAB_DATA = [
 // Kategorien-Metadaten für Filter & Badges
 var CATEGORIES = {
   all: { name: "Sve (Alle)", icon: "✨" },
+  fav: { name: "Favoriten", icon: "⭐" },
   rijeci: { name: "Wichtige Nomen", icon: "🏛️" },
   pridjevi: { name: "Eigenschaften", icon: "🎨" },
   verben: { name: "Wichtige Verben", icon: "⚡" },
