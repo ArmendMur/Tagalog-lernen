@@ -38,6 +38,7 @@ class TagalogVocabApp {
     this.quizIndex = 0;
     this.quizScore = 0;
     this.quizTimer = null;
+    this.quizNextTimeout = null;
     this.quizActive = false;
     this.quizQuestionActive = false;
     this.quizRemainingMs = 15000;
@@ -47,6 +48,7 @@ class TagalogVocabApp {
     // Match State
     this.matchTiles = [];
     this.selectedMatchTile = null;
+    this.matchGridLocked = false;
     this.matchedPairsCount = 0;
     this.matchTimerInterval = null;
     this.matchSeconds = 0;
@@ -754,8 +756,11 @@ class TagalogVocabApp {
         }
       } else {
         // Blitz-Quiz: Falls ein Quiz aktiv ist, Zeit fortsetzen statt neu zu starten!
-        if (this.quizActive && this.quizQuestionActive) {
+        if (this.quizActive && this.quizQuestionActive && this.quizRemainingMs > 0) {
           this.resumeQuizTimer();
+        } else if (this.quizActive && !this.quizQuestionActive) {
+          this.quizIndex++;
+          this.renderQuizQuestion();
         } else if (!this.quizActive) {
           this.startQuiz();
         }
@@ -1242,11 +1247,18 @@ class TagalogVocabApp {
 
   renderQuizQuestion() {
     this.stopQuizTimer();
+    if (this.currentView !== 'quiz' || !this.quizActive) return;
+
     if (this.quizIndex >= this.quizQueue.length) {
       this.quizActive = false;
       this.quizQuestionActive = false;
       this.showQuizSummary();
       return;
+    }
+
+    if (this.elements.quizTimerFill) {
+      this.elements.quizTimerFill.style.width = '100%';
+      this.elements.quizTimerFill.classList.remove('timeout');
     }
 
     const currentItem = this.quizQueue[this.quizIndex];
@@ -1286,19 +1298,26 @@ class TagalogVocabApp {
 
     // 15s Timer starten (15000 ms)
     this.quizRemainingMs = 15000;
-    this.quizTimerStart = Date.now();
     this.startQuizTimer();
   }
 
   startQuizTimer() {
     this.stopQuizTimer();
-    const duration = 15000;
+    if (this.currentView !== 'quiz' || !this.quizActive) return;
+
+    const totalDuration = 15000;
     this.quizQuestionActive = true;
+    this.quizTimerStart = Date.now();
+    const initialRemaining = (typeof this.quizRemainingMs === 'number' && this.quizRemainingMs > 0) ? this.quizRemainingMs : totalDuration;
 
     this.quizTimer = setInterval(() => {
+      if (this.currentView !== 'quiz') {
+        this.pauseQuizTimer();
+        return;
+      }
       const elapsed = Date.now() - this.quizTimerStart;
-      const remaining = Math.max(0, duration - elapsed);
-      const pct = (remaining / duration) * 100;
+      const remaining = Math.max(0, initialRemaining - elapsed);
+      const pct = (remaining / totalDuration) * 100;
 
       if (this.elements.quizTimerFill) {
         this.elements.quizTimerFill.style.width = `${pct}%`;
@@ -1312,14 +1331,60 @@ class TagalogVocabApp {
   }
 
   handleQuizTimeout() {
+    if (this.currentView !== 'quiz' || !this.quizActive) return;
+    this.stopQuizTimer();
     this.quizQuestionActive = false;
-    this.handleQuizAnswer(null, false, this.quizCurrentItem);
+
+    // Timer-Balken rot / leer anzeigen
+    if (this.elements.quizTimerFill) {
+      this.elements.quizTimerFill.style.width = '0%';
+      this.elements.quizTimerFill.classList.add('timeout');
+    }
+
+    // Deutlicher Hinweis: Zeit abgelaufen!
+    if (this.elements.quizQuestionSub) {
+      this.elements.quizQuestionSub.innerHTML = '<span style="color: #EF4444; font-weight: 800;">⏱️ ZEIT ABGELAUFEN!</span>';
+    }
+
+    // Option-Buttons deaktivieren
+    const allBtns = this.elements.quizOptions.querySelectorAll('.quiz-option-btn');
+    allBtns.forEach(b => b.style.pointerEvents = 'none');
+
+    // Richtige Antwort nicht als Erfolg (grün), sondern als Auflösung in Gold hervorheben
+    const currentItem = this.quizCurrentItem;
+    if (currentItem) {
+      const isTlDe = (this.state.direction !== 'de-tl' && this.state.direction !== 'de-hr');
+      const wordTl = currentItem.tl || currentItem.hr;
+      const targetText = isTlDe ? currentItem.de : wordTl;
+
+      allBtns.forEach(b => {
+        if (b.textContent.includes(targetText)) {
+          b.classList.add('timeout-revealed');
+          b.innerHTML = `<span>${targetText}</span> <span style="font-size: 11px; opacity: 0.9;">💡 Richtige Lösung</span>`;
+        }
+      });
+    }
+
+    // Fehlerton abspielen (keine XP, keine Punkte)
+    this.playTone('wrong');
+
+    // 1.8 Sekunden zum Anschauen der Lösung geben, dann nächste Frage
+    this.quizNextTimeout = setTimeout(() => {
+      this.quizNextTimeout = null;
+      if (this.currentView !== 'quiz' || !this.quizActive) return;
+      this.quizIndex++;
+      this.renderQuizQuestion();
+    }, 1800);
   }
 
   pauseQuizTimer() {
     if (this.quizTimer) {
       clearInterval(this.quizTimer);
       this.quizTimer = null;
+    }
+    if (this.quizNextTimeout) {
+      clearTimeout(this.quizNextTimeout);
+      this.quizNextTimeout = null;
     }
     if (this.quizQuestionActive && this.quizTimerStart) {
       const elapsed = Date.now() - this.quizTimerStart;
@@ -1338,6 +1403,10 @@ class TagalogVocabApp {
     if (this.quizTimer) {
       clearInterval(this.quizTimer);
       this.quizTimer = null;
+    }
+    if (this.quizNextTimeout) {
+      clearTimeout(this.quizNextTimeout);
+      this.quizNextTimeout = null;
     }
     this.quizTimerStart = null;
   }
@@ -1377,7 +1446,9 @@ class TagalogVocabApp {
 
     this.elements.quizScore.textContent = `${this.quizScore} Pkt`;
 
-    setTimeout(() => {
+    this.quizNextTimeout = setTimeout(() => {
+      this.quizNextTimeout = null;
+      if (this.currentView !== 'quiz' || !this.quizActive) return;
       this.quizIndex++;
       this.renderQuizQuestion();
     }, 1100);
@@ -1388,6 +1459,13 @@ class TagalogVocabApp {
     this.quizActive = false;
     this.quizQuestionActive = false;
     this.playTone('victory');
+    if (this.elements.quizQuestionSub) {
+      this.elements.quizQuestionSub.textContent = "Ergebnis";
+    }
+    if (this.elements.quizTimerFill) {
+      this.elements.quizTimerFill.style.width = '100%';
+      this.elements.quizTimerFill.classList.remove('timeout');
+    }
     this.elements.quizWord.textContent = `Quiz beendet! 🏆`;
     this.elements.quizOptions.innerHTML = `
       <div style="text-align: center; padding: 20px;">
@@ -1503,6 +1581,7 @@ class TagalogVocabApp {
     this.matchSeconds = 0;
     this.matchedPairsCount = 0;
     this.selectedMatchTile = null;
+    this.matchGridLocked = false;
     this.elements.matchTimerText.textContent = '00:00';
 
     // Bestzeit Badge aktualisieren
@@ -1582,66 +1661,87 @@ class TagalogVocabApp {
   }
 
   handleMatchTileClick(el, tile) {
-    if (el.classList.contains('matched') || el.classList.contains('selected')) {
+    if (this.matchGridLocked) return;
+    if (el.classList.contains('matched')) return;
+
+    // Fall 1: Bereits ausgewählte Kachel nochmals angetippt -> ABWÄHLEN (Deselect)
+    if (this.selectedMatchTile && this.selectedMatchTile.el === el) {
+      el.classList.remove('selected');
+      this.selectedMatchTile = null;
+      this.playTone('pop');
       return;
     }
 
+    // Fall 2: Noch keine Kachel gewählt -> Erste Kachel auswählen
     if (!this.selectedMatchTile) {
-      // Erste Kachel ausgewählt
       this.selectedMatchTile = { el, tile };
       el.classList.add('selected');
       this.playTone('select');
-    } else {
-      // Zweite Kachel ausgewählt
-      const first = this.selectedMatchTile;
-      
-      if (first.tile.type !== tile.type && first.tile.matchId === tile.matchId) {
-        // Correct Pair!
-        first.el.classList.remove('selected');
-        first.el.classList.add('matched');
-        el.classList.add('matched');
-        this.selectedMatchTile = null;
-        this.matchedPairsCount++;
-        this.playTone('match');
-        this.addXP(25);
+      return;
+    }
 
-        if (tile.type === 'tl' || tile.type === 'hr') this.speakTagalog(tile.text);
-        else this.speakTagalog(first.tile.text);
+    // Fall 3: Zweite Kachel angetippt
+    const first = this.selectedMatchTile;
 
-        if (this.matchedPairsCount === 6) {
-          this.stopMatchTimer();
-          const timeSpent = this.matchSeconds;
-          let isRecord = false;
-          if (!this.state.bestMatchTime || timeSpent < this.state.bestMatchTime) {
-            this.state.bestMatchTime = timeSpent;
-            isRecord = true;
-          }
-          this.incrementDailyProgress(2);
-          this.saveState();
-          this.playTone('victory');
+    // Fall 3a: Gleiche Sprache angetippt (z.B. beide Tagalog oder beide Deutsch)
+    // -> Benutzer möchte seine Auswahl wechseln statt eines Fehlversuchs!
+    if (first.tile.type === tile.type) {
+      first.el.classList.remove('selected');
+      this.selectedMatchTile = { el, tile };
+      el.classList.add('selected');
+      this.playTone('select');
+      return;
+    }
 
-          const bm = String(Math.floor(this.state.bestMatchTime / 60)).padStart(2, '0');
-          const bs = String(this.state.bestMatchTime % 60).padStart(2, '0');
-          if (this.elements.matchBestBadge) {
-            this.elements.matchBestBadge.textContent = `🏆 Best: ${bm}:${bs}`;
-          }
+    // Fall 3b: Unterschiedliche Sprachen angetippt -> Match prüfen!
+    if (first.tile.matchId === tile.matchId) {
+      // Treffer (Correct Pair!)
+      first.el.classList.remove('selected');
+      first.el.classList.add('matched');
+      el.classList.add('matched');
+      this.selectedMatchTile = null;
+      this.matchedPairsCount++;
+      this.playTone('match');
+      this.addXP(25);
 
-          setTimeout(() => {
-            alert(`🎉 Alle 6 Paare gematcht in ${timeSpent}s! ${isRecord ? 'Neuer persönlicher Rekord! 🏆' : ''}`);
-            this.initMatchGame();
-          }, 450);
+      if (tile.type === 'tl' || tile.type === 'hr') this.speakTagalog(tile.text);
+      else this.speakTagalog(first.tile.text);
+
+      if (this.matchedPairsCount === 6) {
+        this.stopMatchTimer();
+        const timeSpent = this.matchSeconds;
+        let isRecord = false;
+        if (!this.state.bestMatchTime || timeSpent < this.state.bestMatchTime) {
+          this.state.bestMatchTime = timeSpent;
+          isRecord = true;
         }
-      } else {
-        // Wrong Pair!
-        first.el.classList.add('wrong');
-        el.classList.add('wrong');
-        this.playTone('wrong');
+        this.incrementDailyProgress(2);
+        this.saveState();
+        this.playTone('victory');
+
+        const bm = String(Math.floor(this.state.bestMatchTime / 60)).padStart(2, '0');
+        const bs = String(this.state.bestMatchTime % 60).padStart(2, '0');
+        if (this.elements.matchBestBadge) {
+          this.elements.matchBestBadge.textContent = `🏆 Best: ${bm}:${bs}`;
+        }
+
         setTimeout(() => {
-          first.el.classList.remove('selected', 'wrong');
-          el.classList.remove('wrong');
-          this.selectedMatchTile = null;
-        }, 500);
+          alert(`🎉 Alle 6 Paare gematcht in ${timeSpent}s! ${isRecord ? 'Neuer persönlicher Rekord! 🏆' : ''}`);
+          this.initMatchGame();
+        }, 450);
       }
+    } else {
+      // Falsches Paar (Wrong Pair!)
+      this.matchGridLocked = true;
+      first.el.classList.add('wrong');
+      el.classList.add('wrong');
+      this.playTone('wrong');
+      setTimeout(() => {
+        first.el.classList.remove('selected', 'wrong');
+        el.classList.remove('wrong');
+        this.selectedMatchTile = null;
+        this.matchGridLocked = false;
+      }, 500);
     }
   }
 

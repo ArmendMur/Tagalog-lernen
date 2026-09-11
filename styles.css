@@ -656,6 +656,10 @@ main.main-content {
   transition: width 0.1s linear;
 }
 
+.quiz-timer-fill.timeout {
+  background: var(--accent-hr-red) !important;
+}
+
 .quiz-question-box {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
@@ -717,6 +721,13 @@ main.main-content {
   background: rgba(239, 68, 68, 0.2) !important;
   border-color: var(--accent-hr-red) !important;
   color: #FECACA !important;
+}
+
+.quiz-option-btn.timeout-revealed {
+  background: rgba(251, 191, 36, 0.18) !important;
+  border-color: var(--accent-gold) !important;
+  color: #FDE68A !important;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
 }
 
 /* Spika-Dialoge Styles */
@@ -919,6 +930,19 @@ main.main-content {
 .match-tile.matched {
   animation: matchSuccess 0.4s forwards;
   pointer-events: none;
+}
+
+.match-tile.wrong {
+  border-color: var(--accent-hr-red) !important;
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #FECACA !important;
+  animation: tileShake 0.4s ease-in-out;
+}
+
+@keyframes tileShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
 }
 
 @keyframes matchSuccess {
