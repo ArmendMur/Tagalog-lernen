@@ -1,5 +1,5 @@
-// Service Worker für KroVocab - Network-First mit Offline-Cache-Fallback
-const CACHE_VERSION = 'krovocab-v2.5.4';
+// Service Worker für TagalogVocab - Network-First mit Offline-Cache-Fallback
+const CACHE_VERSION = 'tagalogvocab-v3.1.0';
 
 const ASSETS_TO_CACHE = [
   './',

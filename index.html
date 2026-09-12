@@ -3,32 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>KroVocab · Kroatisch Vokabeltrainer</title>
+  <title>TagalogVocab · Tagalog & Filipino Vokabeltrainer</title>
   
   <!-- iPhone / iOS PWA Metatags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="KroVocab">
+  <meta name="apple-mobile-web-app-title" content="TagalogVocab">
   <meta name="theme-color" content="#090D16">
-  <meta name="description" content="Alltägliche kroatische Vokabeln, Slang und Konversations-Chunks für Herkunftssprachler. Optimiert für iPhone 14 Pro.">
+  <meta name="description" content="Alltägliche Tagalog-Vokabeln, Pinoy Slang und Konversations-Chunks für Alltag und Partnerschaft. Optimiert für iPhone 13.">
   
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23090D16'/><circle cx='50' cy='50' r='36' fill='%233B82F6'/><path d='M30 40h40v20H30z' fill='%23EF4444'/><text x='50' y='63' font-size='38' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif' font-weight='bold'>HR</text></svg>">
+  <!-- Pinoy Theme Favicon: Royal Blue, Red, Golden Sun & TL -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23090D16'/><circle cx='50' cy='50' r='38' fill='%232563EB'/><path d='M50 12 A38 38 0 0 1 88 50 L50 50 Z' fill='%23EF4444'/><polygon points='12,12 50,50 12,88' fill='%23FFFFFF'/><circle cx='26' cy='50' r='10' fill='%23FBBF24'/><text x='64' y='60' font-size='26' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif' font-weight='900'>TL</text></svg>">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=2.5.4">
+  <link rel="stylesheet" href="styles.css?v=3.1.0">
 </head>
 <body>
 
   <div id="app-container">
-    <div class="ambient-glow"></div>
 
-    <!-- Header mit Dynamic Island Einpassung -->
+    <!-- Header mit iPhone Notch / Safe Area Einpassung -->
     <header class="app-header">
       <div class="header-controls">
-        <!-- Lernrichtung Toggle: HR <-> DE -->
+        <!-- Lernrichtung Toggle: TL <-> DE -->
         <button class="direction-toggle-btn" id="btn-toggle-direction" title="Lernrichtung umkehren">
-          <span id="dir-flag-from">🇭🇷</span>
+          <span id="dir-flag-from">🇵🇭</span>
           <span class="dir-arrow">⇄</span>
           <span id="dir-flag-to">🇩🇪</span>
         </button>
@@ -70,21 +70,21 @@
 
           <!-- Touch/Tap Hilfskontrollen -->
           <div class="swipe-controls">
-            <button class="swipe-btn repeat-btn" id="btn-swipe-repeat" title="Noch üben (Wiederholen)">❌</button>
+            <button class="swipe-btn repeat-btn" id="btn-swipe-repeat" title="Ulitin (Noch üben)">❌</button>
             <button class="swipe-btn flip-btn" id="btn-swipe-flip" title="Karte umdrehen">🔄</button>
-            <button class="swipe-btn know-btn" id="btn-swipe-know" title="Kann ich (Gekonnt)">✅</button>
+            <button class="swipe-btn know-btn" id="btn-swipe-know" title="Alam ko na (Gekonnt)">✅</button>
           </div>
         </div>
       </section>
 
-      <!-- 2. BLITZ-QUIZ & SPIKA-TRAINER VIEW -->
+      <!-- 2. BLITZ-QUIZ & PINOY-DIALOGE VIEW -->
       <section id="view-quiz" class="view">
         <div class="quiz-container">
           
-          <!-- Modus-Umschalter: Blitz-Quiz vs. Spika-Dialoge -->
+          <!-- Modus-Umschalter: Blitz-Quiz vs. Pinoy-Dialoge -->
           <div class="quiz-mode-selector">
             <button class="mode-seg-btn active" id="btn-mode-blitz">⚡ Blitz-Quiz</button>
-            <button class="mode-seg-btn" id="btn-mode-spika">💬 Spika-Dialoge</button>
+            <button class="mode-seg-btn" id="btn-mode-spika">💬 Pinoy-Dialoge</button>
           </div>
 
           <!-- 2A. BLITZ-QUIZ MODUS -->
@@ -112,20 +112,20 @@
             </div>
           </div>
 
-          <!-- 2B. SPIKA-DIALOGE MODUS -->
+          <!-- 2B. PINOY-DIALOGE MODUS -->
           <div id="quiz-spika-section" class="quiz-subview" style="display: none;">
             <div class="spika-header">
-              <span class="spika-badge" id="spika-scenario-cat">☕ KAFIC & AUSGEHEN</span>
+              <span class="spika-badge" id="spika-scenario-cat">🍲 PAGKAIN & TAMBAY</span>
               <div class="quiz-score-badge" id="spika-score-val">0 Pkt</div>
             </div>
 
             <div class="spika-scenario-card">
               <div class="spika-scenario-top">
-                <span class="spika-emoji" id="spika-scenario-emoji">☕</span>
-                <div class="spika-scenario-title" id="spika-scenario-title">Kaffee bestellen wie ein Local</div>
+                <span class="spika-emoji" id="spika-scenario-emoji">🍲</span>
+                <div class="spika-scenario-title" id="spika-scenario-title">An der Karinderya bestellen</div>
               </div>
-              <p class="spika-scenario-text" id="spika-scenario-desc">Der Kellner kommt an deinen Tisch im Café...</p>
-              <div class="spika-scenario-prompt" id="spika-scenario-prompt">Wie bestellst du ganz entspannt wie ein Einheimischer?</div>
+              <p class="spika-scenario-text" id="spika-scenario-desc">Du stehst an der Garküchentheke vor den Töpfen mit leckeren Gerichten...</p>
+              <div class="spika-scenario-prompt" id="spika-scenario-prompt">Wie bestellst du ganz natürlich wie ein Einheimischer?</div>
             </div>
 
             <div class="spika-options-list" id="spika-options-list">
@@ -133,10 +133,10 @@
             </div>
 
             <div class="spika-feedback-box" id="spika-feedback-box" style="display: none;">
-              <div class="spika-feedback-title" id="spika-feedback-title">💡 Spika-Tipp:</div>
+              <div class="spika-feedback-title" id="spika-feedback-title">💡 Pinoy-Tipp:</div>
               <p class="spika-feedback-text" id="spika-feedback-text"></p>
               <div class="spika-feedback-actions">
-                <button class="spika-audio-btn" id="btn-spika-audio" title="Aussprache anhören">🔊 Anhören</button>
+                <button class="spika-audio-btn" id="btn-spika-audio" title="Tagalog anhören">🔊 Anhören</button>
                 <button class="spika-next-btn" id="btn-spika-next">Nächster Dialog ➜</button>
               </div>
             </div>
@@ -151,11 +151,11 @@
           <div class="match-header">
             <div>
               <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">🧩 PAARE MATCHEN</div>
-              <div style="font-size: 11px; color: var(--text-muted);">Tippe Kroatisch & Deutsch zusammen</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Tippe Tagalog & Deutsch zusammen</div>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
               <span style="font-size: 11px; color: var(--accent-gold); font-weight: 600;" id="match-best-badge">🏆 Best: --:--</span>
-              <span style="font-family: monospace; font-size: 15px; font-weight: 700; color: var(--accent-hr-blue);" id="match-timer-val">00:00</span>
+              <span style="font-family: monospace; font-size: 15px; font-weight: 700; color: var(--accent-ph-blue);" id="match-timer-val">00:00</span>
               <button id="btn-restart-match" class="row-action-btn" title="Neu mischen">🔄</button>
             </div>
           </div>
@@ -169,12 +169,12 @@
         <div class="vocab-list-container">
           <div class="search-box-wrapper">
             <span class="search-icon">🔍</span>
-            <input type="text" id="vocab-search-input" class="search-input" placeholder="Vokabel, Slang oder Beispielsatz suchen...">
+            <input type="text" id="vocab-search-input" class="search-input" placeholder="Tagalog, Slang oder Beispielsatz suchen...">
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Wortschatz-Übersicht</span>
-            <button id="btn-open-add-modal" class="stat-pill" style="cursor: pointer; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: var(--accent-hr-blue);">
+            <button id="btn-open-add-modal" class="stat-pill" style="cursor: pointer; background: rgba(37, 99, 235, 0.15); border-color: rgba(37, 99, 235, 0.3); color: var(--accent-ph-blue);">
               <span>➕</span> <span>Eigene Vokabel</span>
             </button>
           </div>
@@ -188,9 +188,9 @@
         <div class="stats-view-container">
           
           <div class="level-card">
-            <div class="level-badge" id="stats-level-badge">👑</div>
-            <div class="level-title" id="stats-level-title">Početnik</div>
-            <div class="level-desc" id="stats-level-desc">Lerne regelmäßig, um dein Sprachlevel zu steigern!</div>
+            <div class="level-badge" id="stats-level-badge">🌱</div>
+            <div class="level-title" id="stats-level-title">Baguhan</div>
+            <div class="level-desc" id="stats-level-desc">Simula pa lang – die ersten Wörter und Phrasen sitzen schon!</div>
             
             <div class="progress-bar-wrap">
               <div class="progress-bar-fill" id="stats-xp-bar-fill" style="width: 10%;"></div>
@@ -200,7 +200,7 @@
           <!-- 3-Minuten Tagesziel Karte -->
           <div class="metric-card" style="text-align: left;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span class="metric-label" style="font-weight: 700; color: #FFFFFF;">🎯 3-Minuten Tagesziel</span>
+              <span class="metric-label" style="font-weight: 700; color: var(--text-primary);">🎯 3-Minuten Tagesziel</span>
               <span style="font-size: 13px; font-weight: 700; color: var(--accent-green);" id="stats-daily-badge">0 / 10 erledigt</span>
             </div>
             <div class="progress-bar-wrap" style="margin-top: 4px; height: 8px;">
@@ -230,7 +230,7 @@
           <div class="srs-box-summary">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
               <div class="srs-title" style="margin-bottom: 0;">🧠 Wortschatz-Gedächtnis</div>
-              <span style="font-size: 11px; font-weight: 600; color: var(--accent-hr-blue); background: rgba(59, 130, 246, 0.15); padding: 3px 8px; border-radius: var(--radius-full);">3 Stufen</span>
+              <span style="font-size: 11px; font-weight: 600; color: var(--accent-ph-blue); background: rgba(37, 99, 235, 0.15); padding: 3px 8px; border-radius: var(--radius-full);">3 Stufen</span>
             </div>
             <div class="srs-levels-row">
               <div class="srs-pill lvl1">
@@ -246,16 +246,39 @@
                 <div class="label">🏆 Gemeistert</div>
               </div>
             </div>
-            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 10px; line-height: 1.45; background: rgba(255, 255, 255, 0.03); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
-              💡 <strong>Wie dein Speicher lernt:</strong> Wenn du eine Karte mit <em>„Kann ich“ (✅)</em> swipest, steigt sie auf. Nach 3 Erfolgen ist sie <strong>gemeistert</strong> und sitzt felsenfest im Langzeitgedächtnis!
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 10px; line-height: 1.45; background: var(--bg-example); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+              💡 <strong>Wie dein Speicher lernt:</strong> Wenn du eine Karte mit <em>„Alam ko na“ (✅)</em> swipest, steigt sie auf. Nach 3 Erfolgen ist sie <strong>gemeistert</strong> und sitzt felsenfest im Langzeitgedächtnis!
             </div>
+            <button id="btn-reset-srs" class="srs-reset-btn" title="Vokabel-Stufen zurücksetzen">
+              <span>🔄</span> <span>Lernfortschritt zurücksetzen (Stufen auf 0)</span>
+            </button>
           </div>
 
-          <div class="metric-card" style="text-align: left;">
-            <div style="font-size: 14px; font-weight: 700; margin-bottom: 6px;">💡 Tipp für Herkunftssprachler:</div>
-            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
-              Da du Grammatik intuitiv beherrschst, liegt der Schlüssel zu flüssigem Kroatisch im schnellen Zugriff auf <strong>Ganzphrasen ("Chunks")</strong> und <strong>Slang</strong>. Nutze täglich 5 Minuten Karten-Swipe für den besten Effekt!
-            </p>
+          <!-- Theme / Farbschema Einstellung -->
+          <div class="metric-card" style="padding: 14px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <div style="font-size: 13.5px; font-weight: 700; color: var(--text-primary);">🎨 Farbschema / Design</div>
+              <span id="theme-active-label" style="font-size: 11px; font-weight: 700; color: var(--accent-ph-blue); background: rgba(37, 99, 235, 0.15); padding: 2px 8px; border-radius: var(--radius-full);">System</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">Wähle dein bevorzugtes Aussehen oder passe es automatisch an</div>
+            <div class="theme-selector-grid" id="theme-selector-grid">
+              <button class="theme-chip" data-theme="system" id="theme-chip-system">
+                <span class="theme-chip-icon">📱</span>
+                <span class="theme-chip-name">System</span>
+              </button>
+              <button class="theme-chip" data-theme="navy" id="theme-chip-navy">
+                <span class="theme-chip-icon">🌊</span>
+                <span class="theme-chip-name">Navy Dark</span>
+              </button>
+              <button class="theme-chip" data-theme="light" id="theme-chip-light">
+                <span class="theme-chip-icon">☀️</span>
+                <span class="theme-chip-name">Hell</span>
+              </button>
+              <button class="theme-chip" data-theme="black" id="theme-chip-black">
+                <span class="theme-chip-icon">🌑</span>
+                <span class="theme-chip-name">OLED</span>
+              </button>
+            </div>
           </div>
 
           <!-- Soundeffekte Einstellung -->
@@ -263,7 +286,7 @@
             <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
               <span style="font-size: 22px;" id="profile-sound-icon">🔊</span>
               <div>
-                <div style="font-size: 13.5px; font-weight: 700; color: #FFFFFF;">Soundeffekte</div>
+                <div style="font-size: 13.5px; font-weight: 700; color: var(--text-primary);">Soundeffekte</div>
                 <div style="font-size: 11px; color: var(--text-secondary);" id="profile-sound-status-desc">Cutes Audio-Feedback beim Lernen</div>
               </div>
             </div>
@@ -272,11 +295,8 @@
             </button>
           </div>
 
-          <div style="margin-top: 6px; text-align: center;">
-            <button id="btn-force-update" class="modal-btn-submit" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-light); font-size: 13px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <span>🔄</span> <span>App aktualisieren / Cache leeren</span>
-            </button>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Version 2.5.4 · Aktualisiert bei Änderungen automatisch</div>
+          <div style="margin-top: 8px; text-align: center;">
+            <div style="font-size: 11px; color: var(--text-muted);">Version 3.0.0 · Automatische Synchronisierung</div>
           </div>
 
         </div>
@@ -316,10 +336,10 @@
           <button class="modal-close-btn" id="btn-modal-close">✕</button>
         </div>
         <form id="add-vocab-form">
-          <input type="text" id="modal-input-hr" class="modal-input" placeholder="Kroatisch (z.B. Skužiti)" required>
-          <input type="text" id="modal-input-de" class="modal-input" placeholder="Deutsch (z.B. Kapieren / verstehen)" required>
-          <input type="text" id="modal-input-ex-hr" class="modal-input" placeholder="Beispielsatz kroatisch (optional)">
-          <input type="text" id="modal-input-ex-de" class="modal-input" placeholder="Beispielsatz deutsch (optional)">
+          <input type="text" id="modal-input-hr" class="modal-input" placeholder="Tagalog (z.B. Salamat po)" required>
+          <input type="text" id="modal-input-de" class="modal-input" placeholder="Deutsch (z.B. Vielen Dank)" required>
+          <input type="text" id="modal-input-ex-hr" class="modal-input" placeholder="Beispielsatz Tagalog (optional)">
+          <input type="text" id="modal-input-ex-de" class="modal-input" placeholder="Beispielsatz Deutsch (optional)">
           <button type="submit" class="modal-btn-submit">Speichern & +30 XP erhalten</button>
         </form>
       </div>
@@ -329,25 +349,25 @@
     <div class="modal-overlay goal-celeb-modal" id="goal-celebration-overlay">
       <div class="modal-sheet goal-celeb-sheet">
         <div style="font-size: 52px; margin-bottom: 8px;">🎯🎉</div>
-        <h2 style="font-size: 22px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">Tagesziel gemeistert!</h2>
+        <h2 style="font-size: 22px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">Tagesziel gemeistert!</h2>
         <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
           Du hast deine 10 Vokabeln / Dialoge für heute erfolgreich trainiert.
         </p>
         <div class="goal-reward-badge">⭐ +50 BONUS XP ERHALTEN!</div>
-        <button class="modal-btn-submit" id="btn-close-goal-celeb" style="margin-top: 14px;">Idemo dalje! (Super!)</button>
+        <button class="modal-btn-submit" id="btn-close-goal-celeb" style="margin-top: 14px;">Mahusay! (Super!)</button>
       </div>
     </div>
 
   </div>
 
   <!-- Scripts mit Cache-Busting Version Query Parameter -->
-  <script src="vocab-data.js?v=2.5.4"></script>
-  <script src="app.js?v=2.5.4"></script>
+  <script src="vocab-data.js?v=3.1.0"></script>
+  <script src="app.js?v=3.1.0"></script>
   <script>
     // Automatisches Service Worker Update-Handling
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=2.5.4').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=3.1.0').then(reg => {
           // Prüfe bei jedem Seitenaufruf sofort auf Updates
           reg.update();
 
@@ -356,7 +376,7 @@
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // Neues Update installiert -> Lade neu für frische Version
-                console.log('[KroVocab] Neues Update gefunden! Lade frisch...');
+                console.log('[TagalogVocab] Neues Update gefunden! Lade frisch...');
                 window.location.reload();
               }
             });
@@ -384,35 +404,6 @@
         }
       });
     }
-
-    // Button "App aktualisieren / Cache leeren" im Profil-Tab
-    document.addEventListener('DOMContentLoaded', () => {
-      const btnUpdate = document.getElementById('btn-force-update');
-      if (btnUpdate) {
-        btnUpdate.addEventListener('click', async () => {
-          btnUpdate.textContent = 'Aktualisiere...';
-          try {
-            if ('serviceWorker' in navigator) {
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              for (let reg of registrations) {
-                await reg.unregister();
-              }
-            }
-            if ('caches' in window) {
-              const cacheKeys = await caches.keys();
-              for (let key of cacheKeys) {
-                await caches.delete(key);
-              }
-            }
-          } catch (e) {
-            console.warn(e);
-          }
-          // Lade frisch vom Server mit Timestamp-Query
-          const cleanUrl = window.location.origin + window.location.pathname + '?fresh=' + Date.now();
-          window.location.replace(cleanUrl);
-        });
-      }
-    });
   </script>
 </body>
 </html>

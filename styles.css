@@ -1,16 +1,29 @@
 /* =========================================================
-   KROATISCH VOKABELTRAINER - iPHONE 14 PRO & MODERN WEB CSS
+   TAGALOG VOKABELTRAINER (TagalogVocab) - iPHONE 13 & MODERN WEB CSS
    ========================================================= */
 
-:root {
+:root,
+html[data-theme="navy"],
+body[data-theme="navy"] {
   --bg-primary: #090D16;
   --bg-secondary: #111827;
   --bg-card: #182234;
   --bg-card-glass: rgba(24, 34, 52, 0.75);
+  --bg-header: rgba(9, 13, 22, 0.9);
+  --bg-tabbar: rgba(9, 13, 22, 0.95);
+  --bg-level-card: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  --bg-card-front: linear-gradient(180deg, #1A2538 0%, #121A29 100%);
+  --bg-card-back: linear-gradient(180deg, #1C2B40 0%, #101928 100%);
+  --bg-example: rgba(0, 0, 0, 0.25);
+  --track-bg: rgba(255, 255, 255, 0.1);
+  --cat-bar-bg: rgba(9, 13, 22, 0.92);
   
+  /* Philippine Flag Theme Accents */
+  --accent-ph-blue: #2563EB;
+  --accent-ph-red: #EF4444;
+  --accent-gold: #FBBF24;
+  --accent-hr-blue: #2563EB;
   --accent-hr-red: #EF4444;
-  --accent-hr-blue: #3B82F6;
-  --accent-gold: #F59E0B;
   --accent-green: #10B981;
   --accent-purple: #8B5CF6;
 
@@ -19,10 +32,10 @@
   --text-muted: #64748B;
   
   --border-light: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(59, 130, 246, 0.4);
+  --border-active: rgba(37, 99, 235, 0.4);
   
   --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05);
-  --shadow-glow: 0 0 25px rgba(59, 130, 246, 0.25);
+  --shadow-glow: 0 0 25px rgba(37, 99, 235, 0.25);
   
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -31,11 +44,65 @@
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   
-  /* Safe Area Insets for iPhone 14 Pro */
+  /* Safe Area Insets for iPhone 13 (Browser & Standalone) */
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
+}
+
+/* 🌑 OLED Pitch Black Theme (100% Schwarz für iPhone 13 OLED & Akkusparen) */
+html[data-theme="black"],
+body[data-theme="black"] {
+  --bg-primary: #000000;
+  --bg-secondary: #0A0A0A;
+  --bg-card: #121212;
+  --bg-card-glass: rgba(18, 18, 18, 0.85);
+  --bg-header: rgba(0, 0, 0, 0.92);
+  --bg-tabbar: rgba(0, 0, 0, 0.95);
+  --bg-level-card: linear-gradient(135deg, #18181B 0%, #09090B 100%);
+  --bg-card-front: linear-gradient(180deg, #161616 0%, #0A0A0A 100%);
+  --bg-card-back: linear-gradient(180deg, #191919 0%, #0D0D0D 100%);
+  --bg-example: rgba(255, 255, 255, 0.05);
+  --track-bg: rgba(255, 255, 255, 0.12);
+  --cat-bar-bg: rgba(0, 0, 0, 0.95);
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+
+  --border-light: rgba(255, 255, 255, 0.12);
+  --border-active: rgba(37, 99, 235, 0.6);
+
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+  --shadow-glow: 0 0 25px rgba(37, 99, 235, 0.2);
+}
+
+/* ☀️ Crisp Clean Light Theme (Klarer Kontrast für Tageslicht) */
+html[data-theme="light"],
+body[data-theme="light"] {
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #EDF2F7;
+  --bg-card: #FFFFFF;
+  --bg-card-glass: rgba(255, 255, 255, 0.95);
+  --bg-header: rgba(248, 250, 252, 0.95);
+  --bg-tabbar: rgba(248, 250, 252, 0.97);
+  --bg-level-card: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
+  --bg-card-front: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  --bg-card-back: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%);
+  --bg-example: rgba(15, 23, 42, 0.04);
+  --track-bg: rgba(100, 116, 139, 0.18);
+  --cat-bar-bg: rgba(248, 250, 252, 0.95);
+
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+
+  --border-light: rgba(15, 23, 42, 0.12);
+  --border-active: rgba(37, 99, 235, 0.5);
+
+  --shadow-card: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 25px rgba(37, 99, 235, 0.12);
 }
 
 * {
@@ -47,9 +114,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+button, input, select, textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
 html, body {
   width: 100%;
   height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   height: 100dvh;
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -58,11 +132,13 @@ html, body {
   overscroll-behavior: none;
 }
 
-/* Fullscreen App Shell for iPhone 14 Pro (393 x 852 pt) */
+/* Fullscreen App Shell for iPhone 13 (390 x 844 pt) */
 #app-container {
   width: 100%;
-  max-width: 440px;
+  max-width: 430px;
   height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   height: 100dvh;
   margin: 0 auto;
   display: flex;
@@ -74,20 +150,7 @@ html, body {
   overflow: hidden;
 }
 
-/* Background ambient glow */
-.ambient-glow {
-  position: absolute;
-  top: -120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, rgba(239, 68, 68, 0.08) 50%, transparent 75%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Top App Header with Dynamic Island padding */
+/* Top App Header with iPhone 13 Notch padding */
 header.app-header {
   position: relative;
   z-index: 20;
@@ -95,13 +158,14 @@ header.app-header {
   padding-bottom: 8px;
   padding-left: 14px;
   padding-right: 14px;
+  min-height: 52px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-light);
-  background-color: rgba(9, 13, 22, 0.9);
+  background-color: var(--bg-header);
   flex-shrink: 0;
 }
 
@@ -117,7 +181,7 @@ header.app-header {
   border: 1px solid var(--border-active);
   border-radius: var(--radius-full);
   padding: 5px 12px;
-  color: #FFFFFF;
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 700;
   display: flex;
@@ -209,11 +273,13 @@ header.app-header {
 .category-filter-bar {
   display: flex;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  background: rgba(9, 13, 22, 0.6);
+  background: var(--cat-bar-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-light);
   z-index: 10;
   flex-shrink: 0;
@@ -353,8 +419,8 @@ main.main-content {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: linear-gradient(180deg, #1A2538 0%, #121A29 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-card-front);
+  border: 1px solid var(--border-light);
   transition: opacity 0.25s ease;
 }
 
@@ -370,7 +436,7 @@ main.main-content {
   z-index: 1;
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
-  background: linear-gradient(180deg, #1C2B40 0%, #101928 100%);
+  background: var(--bg-card-back);
   opacity: 0;
   pointer-events: none;
 }
@@ -398,9 +464,10 @@ main.main-content {
 .card-cat-tag {
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
   color: var(--text-secondary);
 }
 
@@ -446,7 +513,7 @@ main.main-content {
   font-size: clamp(20px, 5.5vw, 26px);
   font-weight: 800;
   line-height: 1.25;
-  color: #FFFFFF;
+  color: var(--text-primary);
   letter-spacing: -0.5px;
 }
 
@@ -454,7 +521,7 @@ main.main-content {
   margin-top: 8px;
   padding: 10px 12px;
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--bg-example);
   border-left: 3px solid var(--accent-hr-blue);
   width: 100%;
   text-align: left;
@@ -463,7 +530,7 @@ main.main-content {
 .example-hr {
   font-size: 13.5px;
   font-weight: 600;
-  color: #E2E8F0;
+  color: var(--text-primary);
   margin-bottom: 3px;
 }
 
@@ -555,7 +622,7 @@ main.main-content {
   width: 44px;
   height: 44px;
   font-size: 18px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-card);
   border: 1px solid var(--border-light);
   color: var(--text-secondary);
 }
@@ -635,7 +702,7 @@ main.main-content {
 .quiz-timer-bar {
   width: 100%;
   height: 5px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--track-bg);
   border-radius: var(--radius-full);
   overflow: hidden;
   margin-bottom: 12px;
@@ -646,6 +713,10 @@ main.main-content {
   width: 100%;
   background: linear-gradient(90deg, var(--accent-hr-blue), var(--accent-hr-red));
   transition: width 0.1s linear;
+}
+
+.quiz-timer-fill.timeout {
+  background: var(--accent-hr-red) !important;
 }
 
 .quiz-question-box {
@@ -669,7 +740,7 @@ main.main-content {
 .quiz-question-word {
   font-size: 22px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--text-primary);
 }
 
 .quiz-options-grid {
@@ -682,7 +753,7 @@ main.main-content {
 .quiz-option-btn {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
-  color: #FFFFFF;
+  color: var(--text-primary);
   padding: 12px 14px;
   border-radius: var(--radius-md);
   font-size: 14px;
@@ -709,6 +780,13 @@ main.main-content {
   background: rgba(239, 68, 68, 0.2) !important;
   border-color: var(--accent-hr-red) !important;
   color: #FECACA !important;
+}
+
+.quiz-option-btn.timeout-revealed {
+  background: rgba(251, 191, 36, 0.18) !important;
+  border-color: var(--accent-gold) !important;
+  color: #FDE68A !important;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
 }
 
 /* Spika-Dialoge Styles */
@@ -753,7 +831,7 @@ main.main-content {
 .spika-scenario-title {
   font-size: 15px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--text-primary);
 }
 
 .spika-scenario-text {
@@ -782,7 +860,7 @@ main.main-content {
   padding: 12px 14px;
   font-size: 13.5px;
   line-height: 1.4;
-  color: #FFFFFF;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -833,7 +911,7 @@ main.main-content {
 .spika-audio-btn {
   background: rgba(59, 130, 246, 0.2);
   border: 1px solid var(--accent-hr-blue);
-  color: #FFFFFF;
+  color: var(--text-primary);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: 12px;
@@ -890,8 +968,10 @@ main.main-content {
   align-items: center;
   justify-content: center;
   text-align: center;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
+  color: var(--text-primary);
+  font-family: inherit;
   min-height: 52px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -903,14 +983,28 @@ main.main-content {
 }
 
 .match-tile.selected {
-  border-color: var(--accent-hr-blue);
-  background: rgba(59, 130, 246, 0.2);
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+  border-color: var(--accent-ph-blue);
+  background: rgba(37, 99, 235, 0.22);
+  color: var(--text-primary);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.35);
 }
 
 .match-tile.matched {
   animation: matchSuccess 0.4s forwards;
   pointer-events: none;
+}
+
+.match-tile.wrong {
+  border-color: var(--accent-hr-red) !important;
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #FECACA !important;
+  animation: tileShake 0.4s ease-in-out;
+}
+
+@keyframes tileShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
 }
 
 @keyframes matchSuccess {
@@ -941,8 +1035,8 @@ main.main-content {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 12px 14px 12px 38px;
-  color: #FFFFFF;
-  font-size: 15px;
+  color: var(--text-primary);
+  font-size: 16px; /* 16px verhindert unerwünschtes Auto-Zoomen in iOS Safari */
   outline: none;
 }
 
@@ -993,7 +1087,7 @@ main.main-content {
 .vocab-row-hr {
   font-size: 16px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--text-primary);
   margin-bottom: 3px;
 }
 
@@ -1015,7 +1109,7 @@ main.main-content {
 }
 
 .row-action-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-card);
   border: 1px solid var(--border-light);
   color: var(--text-secondary);
   width: 36px;
@@ -1025,6 +1119,7 @@ main.main-content {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .row-action-btn.star.active {
@@ -1050,7 +1145,7 @@ main.main-content {
 }
 
 .level-card {
-  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  background: var(--bg-level-card);
   border: 1px solid var(--border-active);
   border-radius: var(--radius-lg);
   padding: 18px 16px;
@@ -1059,6 +1154,7 @@ main.main-content {
   overflow: hidden;
   flex-shrink: 0;
   margin-top: 2px;
+  box-shadow: var(--shadow-card);
 }
 
 .level-badge {
@@ -1070,7 +1166,7 @@ main.main-content {
 .level-title {
   font-size: 20px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--text-primary);
 }
 
 .level-desc {
@@ -1082,7 +1178,7 @@ main.main-content {
 .progress-bar-wrap {
   width: 100%;
   height: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--track-bg);
   border-radius: var(--radius-full);
   margin-top: 14px;
   overflow: hidden;
@@ -1114,7 +1210,7 @@ main.main-content {
 .metric-num {
   font-size: 26px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--text-primary);
   margin-top: 4px;
 }
 
@@ -1134,7 +1230,7 @@ main.main-content {
 .srs-title {
   font-size: 14px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
@@ -1149,7 +1245,8 @@ main.main-content {
   text-align: center;
   padding: 10px 6px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-example);
+  border: 1px solid var(--border-light);
 }
 
 .srs-pill.lvl1 { border-bottom: 3px solid #64748B; }
@@ -1159,12 +1256,13 @@ main.main-content {
 .srs-pill .count {
   font-size: 18px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--text-primary);
 }
 
 .srs-pill .label {
   font-size: 10.5px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
@@ -1178,8 +1276,9 @@ nav.app-tabbar {
   justify-content: space-around;
   align-items: center;
   padding-top: 6px;
-  padding-bottom: max(var(--sab), 10px);
-  background: rgba(9, 13, 22, 0.95);
+  padding-bottom: max(var(--sab), 14px);
+  min-height: 60px;
+  background: var(--bg-tabbar);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid var(--border-light);
@@ -1190,6 +1289,7 @@ nav.app-tabbar {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
   background: none;
   border: none;
@@ -1200,6 +1300,8 @@ nav.app-tabbar {
   transition: all 0.15s ease;
   user-select: none;
   padding: 3px 6px;
+  min-height: 44px;
+  min-width: 48px;
 }
 
 .tab-icon {
@@ -1264,6 +1366,7 @@ nav.app-tabbar {
 .modal-header h3 {
   font-size: 18px;
   font-weight: 700;
+  color: var(--text-primary);
 }
 
 .modal-close-btn {
@@ -1280,8 +1383,8 @@ nav.app-tabbar {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 12px 14px;
-  color: #FFFFFF;
-  font-size: 15px;
+  color: var(--text-primary);
+  font-size: 16px; /* 16px verhindert iOS Safari Auto-Zoom */
   outline: none;
   margin-bottom: 12px;
 }
@@ -1319,5 +1422,182 @@ nav.app-tabbar {
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   THEME SELECTOR & SRS RESET STYLES
+   ========================================================= */
+.theme-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.theme-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  font-family: inherit;
+  user-select: none;
+  min-height: 60px;
+}
+
+.theme-chip:active {
+  transform: scale(0.94);
+}
+
+.theme-chip.active {
+  border-color: var(--accent-ph-blue);
+  background: rgba(37, 99, 235, 0.16);
+  color: var(--text-primary);
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.3);
+}
+
+.theme-chip-icon {
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+
+.theme-chip-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* SRS Reset Button */
+.srs-reset-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px dashed rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-sm);
+  color: #F87171;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.srs-reset-btn:active {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(0.98);
+}
+
+/* SRS Level Badge on Swipe Card */
+.srs-card-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.srs-card-badge.lvl1 {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93C5FD;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.srs-card-badge.lvl2 {
+  background: rgba(251, 191, 36, 0.15);
+  color: #FDE68A;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.srs-card-badge.lvl3 {
+  background: rgba(16, 185, 129, 0.15);
+  color: #A7F3D0;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* =========================================================
+   LIGHT MODE OPTIMIZATIONS (Klarer Kontrast für Sonnenlicht)
+   ========================================================= */
+html[data-theme="light"] .cat-chip {
+  background: #FFFFFF;
+  color: #0F172A;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme="light"] .cat-chip.active {
+  background: var(--accent-ph-blue);
+  color: #FFFFFF;
+  border-color: var(--accent-ph-blue);
+}
+
+html[data-theme="light"] .theme-chip {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme="light"] .theme-chip.active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: var(--accent-ph-blue);
+}
+
+html[data-theme="light"] .theme-chip.active .theme-chip-name {
+  color: var(--accent-ph-blue);
+}
+
+html[data-theme="light"] .srs-card-badge {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .srs-card-badge.lvl1 {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1D4ED8;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+html[data-theme="light"] .srs-card-badge.lvl2 {
+  background: rgba(217, 119, 6, 0.12);
+  color: #B45309;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+html[data-theme="light"] .srs-card-badge.lvl3 {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+html[data-theme="light"] .srs-reset-btn {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px dashed rgba(239, 68, 68, 0.45);
+  color: #DC2626;
+  font-weight: 700;
+}
+
+html[data-theme="light"] .srs-reset-btn:active {
+  background: rgba(239, 68, 68, 0.16);
+}
+
+html[data-theme="light"] .level-card {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }
 

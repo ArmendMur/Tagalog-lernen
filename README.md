@@ -1,43 +1,51 @@
-# 🇭🇷 KroVocab · Kroatisch Vokabeltrainer (iPhone 14 Pro & GitHub Pages)
+# 🇵🇭 TagalogVocab · Tagalog & Filipino Vokabeltrainer (iPhone 13 & GitHub Pages)
 
-Eine moderne, schnelle und speziell für **Herkunftssprachler (Muttersprachler)** entwickelte Web-App zum Lernen und Reaktivieren von alltagstauglichem kroatischem Wortschatz, Slang und Konversations-Chunks.
+Eine moderne, schnelle und speziell für **Alltagskommunikation, Familie, Reisen & Partnerschaft** entwickelte Web-App zum Lernen und Festigen von praxisnahem Tagalog (Filipino), Pinoy-Slang und typischen Redewendungen.
 
 ---
 
-## 🎯 Warum KroVocab für Herkunftssprachler?
-Wenn Kroatisch deine Muttersprache ist, hast du die Grammatik und das Sprachgefühl bereits im Blut. Was oft fehlt, ist der **aktive Wortschatz**, treffende Ausdrücke im Café, moderne Umgangssprache und das schnelle Abrufen von Alltags-Phrasen beim Sprechen mit Familie, Freunden oder Einheimischen.
+## 🎯 Warum TagalogVocab?
+Tagalog lebt von seiner Herzlichkeit, lebendigen Partikeln (*naman, pala, kasi, eh, nga*), Respektsformen (*po/opo, Mano po*) und humorvollem Slang (*Lodi, Petmalu, Chibog, Charot*). 
 
-- **0 % Grammatiktabellen, 100 % Kommunikation**
-- **Über 120+ handverlesene Vokabeln & Redewendungen** mit authentischen Beispielsätzen
-- **Themen**: *Kafić & Ausgehen*, *Slang & Spika*, *Smalltalk & Reaktionen*, *Treffen & Pläne*, *Alltag & Unterwegs*, *Gefühle* und *Wichtige Verben*
+- **0 % trockene Grammatiktabellen, 100 % echte Kommunikation**
+- **Über 500+ handverlesene Vokabeln & Redewendungen** mit authentischen Beispielsätzen
+- **Themen**: *Pagkain & Tambay (Essen, Trinken & Ausgehen)*, *Pinoy Slang & Trends*, *Kamustahan & Phrasen*, *Lakwatsa & Treffen*, *Araw-Araw & Palengke (Markt & Alltag)*, *Damdamin & Kilig (Gefühle & Liebe)*, *Wichtige Verben*, *Eigenschaftswörter (Adjektive)*, *Wichtige Wörter (Familie & Körper)* und *Partikel & Bindewörter*
+- **16 Echte Pinoy-Dialogsituationen**: Bestellen an der Karinderya, Jeepney-Fahrt, Treffen mit der Verwandtschaft, Verhandeln auf dem Markt, Taifun-Vorsorge uvm.
 - **Eigene Vokabeln hinzufügen**: Du hörst ein neues Wort? Trage es direkt in der App ein!
 
 ---
 
-## 📱 Features (Optimiert für iPhone 14 Pro)
+## 📱 Features (Optimiert für iPhone 13 & mobilen Safari-Browser)
 
 1. **Karten-Swipe (Tinder-Gesten)**:
    - Tippen dreht die Karte 3D um (zeigt Bedeutung & Beispielsatz).
-   - Nach **Rechts wischen (ZNAM ✅)** für gekonnte Vokabeln (+15 XP, Level-Up im Spaced Repetition System).
-   - Nach **Links wischen (PONOVI ❌)** zum Wiederholen (+5 XP, Karte wird hinten eingereiht).
-2. **Blitz-Quiz**: 10 rasante Fragen gegen die Uhr mit Sofort-Feedback und Punktejagd.
-3. **Wort-Match**: 6 kroatisch-deutsche Wortpaare auf Zeit antippen und matchen.
+   - Nach **Rechts wischen (ALAM KO NA ✅)** für gekonnte Vokabeln (+15 XP, Level-Up im Spaced Repetition System).
+   - Nach **Links wischen (ULITIN ❌)** zum Wiederholen (+5 XP, Karte wird hinten eingereiht).
+2. **Blitz-Quiz & Pinoy-Dialoge**:
+   - *Blitz-Quiz*: Rasante Fragen gegen die 15-Sekunden-Uhr mit Sofort-Feedback.
+   - *Pinoy-Dialoge*: 16 authentische Alltagsszenarien mit Insidertipps für das richtige Benehmen vor Ort.
+3. **Wort-Match**: 6 Tagalog-deutsche Wortpaare auf Zeit antippen und matchen.
 4. **Wörterbuch & Suchfunktion**: Schnelle Echtzeit-Suche, Favoriten-Sternchen ⭐ und Audio-Aussprache.
 5. **Erfolge & Streak-Tracking**:
    - 🔥 **Tages-Streak**: Belohnt tägliches Dranbleiben.
-   - 🏆 **Level-System**: Vom *Početnik* über *Kafić-Gost* bis zur *Kralj/ica Razgovora*.
+   - 🏆 **Pinoy-Level**: Vom *Baguhan* über *Batang Quiapo* und *Petmalu Lodi* bis zum *Pinoy at Heart*.
    - 🧠 **SRS-Lernboxen**: Speichert Fortschritte direkt und sicher im `localStorage` deines iPhones.
-6. **Audio-Aussprache**: Kroatische Sprachausgabe direkt auf Knopfdruck via Web Speech API.
-7. **Offline-Fähig (PWA)**: Dank Service Worker funktioniert die App auch im Flugzeug oder am Strand in Kroatien ohne Netz!
+6. **Audio-Aussprache**: Tagalog-Sprachausgabe (`fil-PH` / `tl-PH`) direkt auf Knopfdruck via Web Speech API.
+7. **iPhone 13 & Safari Browser-Optimierung**:
+   - `100dvh` dynamische Viewport-Anpassung verhindert Abschneiden durch die schwebende Safari-Leiste.
+   - iOS-Safe-Area-Padding (`env(safe-area-inset-bottom)`) oben und unten.
+   - Mindestens 44×44pt Touch-Targets für intuitive Daumenbedienung.
+   - 16px Schriftgröße in Eingabefeldern verhindert das störende automatische Heranzoomen in Safari.
+8. **Offline-Fähig (PWA)**: Dank Service Worker funktioniert die App auch im Flugzeug oder auf Reisen auf den Philippinen ohne Internetverbindung!
 
 ---
 
 ## 🚀 In 3 Schritten auf GitHub Pages hosten
 
-Die App besteht aus reinem, modernem Web-Standard (HTML5, CSS3, ES6 JavaScript) – **kein Build-Schritt, kein Node-Server nötig!**
+Die App besteht aus modernem Web-Standard (HTML5, CSS3, ES6 JavaScript) – **kein Build-Schritt, kein Node-Server nötig!**
 
 ### Schritt 1: GitHub Repository anlegen
-1. Gehe auf [GitHub.com](https://github.com) und erstelle ein neues Repository (z.B. `kroatisch-lernen`).
+1. Gehe auf [GitHub.com](https://github.com) und erstelle ein neues Repository (z.B. `tagalog-lernen` oder `tagalogvocab`).
 2. Wähle **Public** aus.
 
 ### Schritt 2: Code hochladen (Git)
@@ -46,9 +54,9 @@ Führe in diesem Ordner folgende Befehle im Terminal/PowerShell aus:
 ```bash
 git init
 git add .
-git commit -m "Init KroVocab App"
+git commit -m "Erweiterung auf 500+ Vokabeln & Themes"
 git branch -M main
-git remote add origin https://github.com/DEIN_BENUTZERNAME/kroatisch-lernen.git
+git remote add origin https://github.com/ArmendMur/Tagalog-lernen.git
 git push -u origin main
 ```
 
@@ -61,14 +69,14 @@ git push -u origin main
    - Branch: `main`
    - Ordner: `/ (root)`
 4. Klicke auf **Save**.
-5. Nach ca. 1 Minute ist deine App unter `https://DEIN_BENUTZERNAME.github.io/kroatisch-lernen/` live!
+5. Nach ca. 1 Minute ist deine App unter `https://ArmendMur.github.io/Tagalog-lernen/` live!
 
 ---
 
-## 📲 Als Vollbild-App auf dem iPhone 14 Pro installieren
+## 📲 Als Vollbild-App auf dem iPhone 13 installieren
 
-1. Öffne die GitHub-Pages-URL in **Safari** auf deinem iPhone 14 Pro.
+1. Öffne die GitHub-Pages-URL in **Safari** auf dem iPhone 13.
 2. Tippe unten in Safari auf das **Teilen-Symbol** (Viereck mit Pfeil nach oben).
 3. Scrolle etwas nach unten und wähle **"Zum Home-Bildschirm"** (Add to Home Screen).
 4. Tippe oben rechts auf **"Hinzufügen"**.
-5. **Fertig!** Du hast jetzt ein eigenes App-Icon auf deinem Home-Screen. Wenn du es antippst, öffnet sich KroVocab als vollwertige Vollbild-App mit Dynamic-Island-Anpassung und ohne störende Browserleisten.
+5. **Fertig!** Du hast jetzt ein eigenes App-Icon auf deinem Home-Screen. Beim Antippen öffnet sich TagalogVocab als vollwertige App ohne störende Browserleisten.

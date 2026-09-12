@@ -1,7 +1,7 @@
 {
-  "name": "KroVocab - Kroatisch Vokabeltrainer",
-  "short_name": "KroVocab",
-  "description": "Kroatische Alltagsvokabeln & Slang für Herkunftssprachler",
+  "name": "TagalogVocab - Tagalog & Filipino Vokabeltrainer",
+  "short_name": "TagalogVocab",
+  "description": "Tagalog Alltagsvokabeln, Pinoy Slang und Konversation für iPhone 13",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#090D16",

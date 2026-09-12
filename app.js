@@ -1,12 +1,12 @@
 /**
- * KROATISCH VOKABELTRAINER - APP CORE
- * Speziell für Herkunftssprachler & flüssige Alltagskommunikation
- * Optimiert für iPhone 14 Pro & GitHub Pages
+ * TAGALOG VOKABELTRAINER - APP CORE (TagalogVocab)
+ * Speziell für Alltagskommunikation, Familie & Partnerschaft
+ * Optimiert für iPhone 13 & GitHub Pages
  */
 
-class KroVocabApp {
+class TagalogVocabApp {
   constructor() {
-    this.storageKey = 'krovocab_user_data_v2';
+    this.storageKey = 'tagalogvocab_user_data_v1';
     this.vocab = (typeof VOCAB_DATA !== 'undefined') ? [...VOCAB_DATA] : ((typeof window !== 'undefined' && window.VOCAB_DATA) ? [...window.VOCAB_DATA] : []);
     this.categories = (typeof CATEGORIES !== 'undefined') ? CATEGORIES : ((typeof window !== 'undefined' && window.CATEGORIES) ? window.CATEGORIES : {});
     this.currentCategory = 'all';
@@ -17,6 +17,12 @@ class KroVocabApp {
 
     // Audio Synthesizer (Web Audio API)
     this.initAudioContext();
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+      window.speechSynthesis.getVoices();
+    }
 
     // Flashcard State
     this.cardQueue = [];
@@ -32,6 +38,7 @@ class KroVocabApp {
     this.quizIndex = 0;
     this.quizScore = 0;
     this.quizTimer = null;
+    this.quizNextTimeout = null;
     this.quizActive = false;
     this.quizQuestionActive = false;
     this.quizRemainingMs = 15000;
@@ -41,6 +48,7 @@ class KroVocabApp {
     // Match State
     this.matchTiles = [];
     this.selectedMatchTile = null;
+    this.matchGridLocked = false;
     this.matchedPairsCount = 0;
     this.matchTimerInterval = null;
     this.matchSeconds = 0;
@@ -65,7 +73,7 @@ class KroVocabApp {
       xp: 0,
       streak: 1,
       lastActiveDate: today,
-      direction: 'hr-de', // 'hr-de' (Kroatisch -> Deutsch) oder 'de-hr' (Deutsch -> Kroatisch)
+      direction: 'tl-de', // 'tl-de' (Tagalog -> Deutsch) oder 'de-tl' (Deutsch -> Tagalog)
       dailyGoal: 10,
       dailyCount: 0,
       dailyGoalDate: today,
@@ -74,7 +82,8 @@ class KroVocabApp {
       favorites: [],
       customVocab: [],
       bestMatchTime: null,
-      soundEnabled: true
+      soundEnabled: true,
+      theme: 'system'
     };
 
     try {
@@ -218,6 +227,79 @@ class KroVocabApp {
       this.elements.btnProfileToggleSound.style.color = isEnabled 
         ? 'var(--accent-green)' 
         : 'var(--accent-hr-red)';
+    }
+  }
+
+  // --- THEME ENGINE (System, Navy Dark, Light, OLED Black) ---
+  initThemeEngine() {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const mediaListener = () => {
+        if (this.state.theme === 'system') {
+          this.applyTheme('system');
+        }
+      };
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', mediaListener);
+      } else if (mediaQuery.addListener) {
+        mediaQuery.addListener(mediaListener);
+      }
+    }
+    this.applyTheme(this.state.theme || 'system');
+  }
+
+  setTheme(themeName) {
+    this.state.theme = themeName;
+    this.saveState();
+    this.applyTheme(themeName);
+    this.playTone('tap');
+  }
+
+  applyTheme(themeName) {
+    let effectiveTheme = themeName;
+    if (themeName === 'system') {
+      const prefersDark = (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      effectiveTheme = prefersDark ? 'navy' : 'light';
+    }
+
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', effectiveTheme);
+      if (document.body) {
+        document.body.setAttribute('data-theme', effectiveTheme);
+      }
+
+      // Safari Header Meta Bar Farbwert synchronisieren
+      let themeColorMeta = document.querySelector('meta[name="theme-color"]');
+      if (!themeColorMeta) {
+        themeColorMeta = document.createElement('meta');
+        themeColorMeta.name = 'theme-color';
+        document.head.appendChild(themeColorMeta);
+      }
+      if (effectiveTheme === 'black') {
+        themeColorMeta.setAttribute('content', '#000000');
+      } else if (effectiveTheme === 'light') {
+        themeColorMeta.setAttribute('content', '#F8FAFC');
+      } else {
+        themeColorMeta.setAttribute('content', '#090D16');
+      }
+
+      // Chips UI Zustand aktualisieren
+      if (this.elements && this.elements.themeChips) {
+        this.elements.themeChips.forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.theme === themeName);
+        });
+      }
+
+      // Theme Label Badge Text aktualisieren
+      if (this.elements && this.elements.themeActiveLabel) {
+        const labels = {
+          system: '📱 System',
+          navy: '🌊 Navy Dark',
+          light: '☀️ Hell',
+          black: '🌑 OLED'
+        };
+        this.elements.themeActiveLabel.textContent = labels[themeName] || 'System';
+      }
     }
   }
 
@@ -414,23 +496,49 @@ class KroVocabApp {
     }
   }
 
-  // --- KROATISCHE AUSTRACHE (Web Speech API) ---
-  speakCroatian(text) {
+  // --- TAGALOG / FILIPINO AUSSPRACHE (Web Speech API) ---
+  speakTagalog(text) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'hr-HR';
-    utterance.rate = 0.9; // Etwas natürlicher / langsamer
+    // Phonetische Optimierung für Sprachsynthesizer:
+    // Im Tagalog wird 'mga' immer als 'manga' und 'ng' als 'nang' gesprochen!
+    let speechText = text
+      .replace(/[»«"„“”]/g, '')
+      .replace(/\bmga\b/gi, 'manga')
+      .replace(/\bng\b/gi, 'nang')
+      .replace(/\bCR\b/g, 'see-arr')
+      .trim();
 
-    // Check available voices for Croatian
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    utterance.lang = 'fil-PH';
+    utterance.rate = 0.88; // Leicht verlangsamt für optimale Deutlichkeit
+
+    // Suche beste verfügbare Stimme:
+    // 1. fil-PH / tl-PH (Native Filipino)
+    // 2. Name enthält 'Sinag', 'Filipino' oder 'Tagalog'
+    // 3. en-PH (Philippinisches Englisch als exzellenter Fallback mit Pinoy-Akzent)
     const voices = window.speechSynthesis.getVoices();
-    const hrVoice = voices.find(v => v.lang.startsWith('hr') || v.lang.includes('HR'));
-    if (hrVoice) {
-      utterance.voice = hrVoice;
+    const bestVoice = voices.find(v => 
+      v.lang === 'fil-PH' || 
+      v.lang === 'tl-PH' || 
+      v.lang.startsWith('fil') || 
+      v.lang.startsWith('tl') || 
+      v.name.toLowerCase().includes('filipino') || 
+      v.name.toLowerCase().includes('tagalog') ||
+      v.name.toLowerCase().includes('sinag')
+    ) || voices.find(v => v.lang === 'en-PH');
+
+    if (bestVoice) {
+      utterance.voice = bestVoice;
     }
 
     window.speechSynthesis.speak(utterance);
+  }
+
+  // Alias für Abwärtskompatibilität
+  speakCroatian(text) {
+    this.speakTagalog(text);
   }
 
   // --- DOM INITIALIZATION ---
@@ -525,6 +633,11 @@ class KroVocabApp {
       srsCountLvl1: document.getElementById('srs-count-lvl1'),
       srsCountLvl2: document.getElementById('srs-count-lvl2'),
       srsCountLvl3: document.getElementById('srs-count-lvl3'),
+      btnResetSRS: document.getElementById('btn-reset-srs'),
+
+      // Theme Selector
+      themeChips: document.querySelectorAll('.theme-chip'),
+      themeActiveLabel: document.getElementById('theme-active-label'),
 
       // Sound Toggle
       btnToggleSound: document.getElementById('btn-toggle-sound'),
@@ -539,6 +652,7 @@ class KroVocabApp {
     this.updateHeaderStats();
     this.updateDirectionUI();
     this.updateSoundUI();
+    this.initThemeEngine();
   }
 
   // --- EVENTS BINDING ---
@@ -570,6 +684,23 @@ class KroVocabApp {
     if (this.elements.btnProfileToggleSound) {
       this.elements.btnProfileToggleSound.addEventListener('click', () => {
         this.toggleSound();
+      });
+    }
+
+    // SRS Reset Button
+    if (this.elements.btnResetSRS) {
+      this.elements.btnResetSRS.addEventListener('click', () => {
+        this.resetSRSProgress();
+      });
+    }
+
+    // Theme Switcher Chips
+    if (this.elements.themeChips) {
+      this.elements.themeChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          const themeName = chip.dataset.theme;
+          this.setTheme(themeName);
+        });
       });
     }
 
@@ -722,8 +853,11 @@ class KroVocabApp {
         }
       } else {
         // Blitz-Quiz: Falls ein Quiz aktiv ist, Zeit fortsetzen statt neu zu starten!
-        if (this.quizActive && this.quizQuestionActive) {
+        if (this.quizActive && this.quizQuestionActive && this.quizRemainingMs > 0) {
           this.resumeQuizTimer();
+        } else if (this.quizActive && !this.quizQuestionActive) {
+          this.quizIndex++;
+          this.renderQuizQuestion();
         } else if (!this.quizActive) {
           this.startQuiz();
         }
@@ -792,7 +926,8 @@ class KroVocabApp {
   }
 
   toggleDirection() {
-    this.state.direction = (this.state.direction === 'hr-de') ? 'de-hr' : 'hr-de';
+    const current = this.state.direction || 'tl-de';
+    this.state.direction = (current === 'tl-de' || current === 'hr-de') ? 'de-tl' : 'tl-de';
     this.saveState();
     this.playTone('flip');
     this.updateDirectionUI();
@@ -806,22 +941,22 @@ class KroVocabApp {
 
   updateDirectionUI() {
     if (!this.elements || !this.elements.dirFlagFrom) return;
-    const isHrDe = (this.state.direction !== 'de-hr');
-    this.elements.dirFlagFrom.textContent = isHrDe ? '🇭🇷' : '🇩🇪';
-    this.elements.dirFlagTo.textContent = isHrDe ? '🇩🇪' : '🇭🇷';
+    const isTlDe = (this.state.direction !== 'de-tl' && this.state.direction !== 'de-hr');
+    this.elements.dirFlagFrom.textContent = isTlDe ? '🇵🇭' : '🇩🇪';
+    this.elements.dirFlagTo.textContent = isTlDe ? '🇩🇪' : '🇵🇭';
     if (this.elements.btnToggleDirection) {
-      this.elements.btnToggleDirection.title = isHrDe 
-        ? 'Richtung: Kroatisch ➜ Deutsch (Tippen zum Wechseln)' 
-        : 'Richtung: Deutsch ➜ Kroatisch (Tippen zum Wechseln)';
+      this.elements.btnToggleDirection.title = isTlDe 
+        ? 'Richtung: Tagalog ➜ Deutsch (Tippen zum Wechseln)' 
+        : 'Richtung: Deutsch ➜ Tagalog (Tippen zum Wechseln)';
     }
   }
 
   getLevelInfo(xp) {
-    if (xp < 100) return { title: 'Početnik (Anfänger)', desc: 'Noch etwas Übung und die Wörter sitzen!', badge: '🌱', next: 100, min: 0 };
-    if (xp < 300) return { title: 'Kafić-Gost (Stammkunde)', desc: 'Kaffee bestellen und Rechnungen zahlen klappt im Schlaf!', badge: '☕', next: 300, min: 100 };
-    if (xp < 650) return { title: 'Pričalica (Plaudertasche)', desc: 'Du bringst spontane Sprüche und Reaktionen wie im Nu.', badge: '💬', next: 650, min: 300 };
-    if (xp < 1200) return { title: 'Spika-Majstor (Slang-Profi)', desc: 'Echte kroatische Umgangssprache geht dir flüssig von den Lippen.', badge: '🔥', next: 1200, min: 650 };
-    return { title: 'Kralj/ica Razgovora (Sprach-Legende)', desc: 'Du redest wie die Einheimischen an der Adria!', badge: '👑', next: xp + 500, min: 1200 };
+    if (xp < 100) return { title: 'Baguhan (Anfänger)', desc: 'Simula pa lang – die ersten Wörter und Phrasen sitzen schon!', badge: '🌱', next: 100, min: 0 };
+    if (xp < 300) return { title: 'Batang Quiapo (Alltags-Kenner)', desc: 'Turo-Turo bestellen und Para po rufen klappt im Schlaf!', badge: '☕', next: 300, min: 100 };
+    if (xp < 650) return { title: 'Makuwento (Plaudertasche)', desc: 'Du bringst spontane Sprüche, Chismis und Reaktionen wie im Nu.', badge: '💬', next: 650, min: 300 };
+    if (xp < 1200) return { title: 'Petmalu Lodi (Slang-Profi)', desc: 'Echter Pinoy-Slang und Konversations-Chunks gehen dir flüssig von den Lippen.', badge: '🔥', next: 1200, min: 650 };
+    return { title: 'Pinoy at Heart (Sprach-Legende)', desc: 'Parang lokal! Du redest mit philippinischer Herzlichkeit wie in Manila!', badge: '👑', next: xp + 500, min: 1200 };
   }
 
   renderStats() {
@@ -857,20 +992,87 @@ class KroVocabApp {
       if (item.level >= 3) lvl3++;
     });
 
-    this.elements.srsCountLvl1.textContent = lvl1;
-    this.elements.srsCountLvl2.textContent = lvl2;
-    this.elements.srsCountLvl3.textContent = lvl3;
-    this.elements.statsMastered.textContent = lvl3;
+    if (this.elements.srsCountLvl1) this.elements.srsCountLvl1.textContent = lvl1;
+    if (this.elements.srsCountLvl2) this.elements.srsCountLvl2.textContent = lvl2;
+    if (this.elements.srsCountLvl3) this.elements.srsCountLvl3.textContent = lvl3;
+    if (this.elements.statsMastered) this.elements.statsMastered.textContent = lvl3;
     this.updateSoundUI();
+    this.applyTheme(this.state.theme || 'system');
+  }
+
+  resetSRSProgress() {
+    const srsValues = Object.values(this.state.srs || {});
+    const totalMastered = srsValues.filter(s => s.level >= 3).length;
+    const totalInProgress = srsValues.filter(s => s.level === 2).length;
+    const totalLearned = srsValues.length;
+
+    if (totalLearned === 0) {
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert('Du hast noch keine Vokabel-Stufen aufgebaut. Alle Karten starten bereits bei Stufe 1!');
+      }
+      return;
+    }
+
+    const confirmMsg = `Möchtest du deinen Vokabel-Lernstatus (SRS) wirklich zurücksetzen?\n\n` +
+      `• ${totalMastered} gemeisterte Vokabeln (Stufe 3)\n` +
+      `• ${totalInProgress} gefestigte Vokabeln (Stufe 2)\n\n` +
+      `Alle Vokabeln starten wieder bei Stufe 1 (Neu).\n\n` +
+      `Hinweis: Deine gesammelten XP (${this.state.xp}) und dein Streak (${this.state.streak} Tage) bleiben vollständig erhalten!`;
+
+    const userConfirmed = (typeof window !== 'undefined' && window.confirm) ? window.confirm(confirmMsg) : true;
+    if (userConfirmed) {
+      this.state.srs = {};
+      this.saveState();
+      this.renderStats();
+      if (this.currentView === 'swipe') {
+        this.initSwipeDeck();
+      }
+      this.playTone('repeat');
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert('Vokabel-Fortschritt wurde erfolgreich zurückgesetzt! Alle Karten starten wieder bei Stufe 1.');
+      }
+    }
   }
 
   // =========================================================
-  // 1. FLASHCARD SWIPE ENGINE (Tinder-Gesten für iPhone 14 Pro)
+  // 1. FLASHCARD SWIPE ENGINE (Spaced Repetition Priorisierung)
   // =========================================================
   initSwipeDeck() {
     const pool = this.getActiveVocab();
-    // Shuffle array
-    this.cardQueue = [...pool].sort(() => Math.random() - 0.5);
+    if (!pool || pool.length === 0) {
+      this.cardQueue = [];
+      this.renderCurrentCard();
+      return;
+    }
+
+    // SRS Priorisierung:
+    // Stufe 1 (Neu / Noch nicht verinnerlicht / Falsch gewusst) -> Höchste Priorität (vorne im Stapel)
+    // Stufe 2 (Gefestigt / 1-2x richtig gewusst) -> Mittlere Priorität
+    // Stufe 3 (Gemeistert / 3x richtig gewusst) -> Am Ende des Stapels zur Auffrischung
+    const lvl1 = [];
+    const lvl2 = [];
+    const lvl3 = [];
+
+    pool.forEach(item => {
+      const srs = this.state.srs[item.id];
+      const level = srs ? srs.level : 1;
+      if (level === 1) {
+        lvl1.push(item);
+      } else if (level === 2) {
+        lvl2.push(item);
+      } else {
+        lvl3.push(item);
+      }
+    });
+
+    const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
+
+    this.cardQueue = [
+      ...shuffle(lvl1),
+      ...shuffle(lvl2),
+      ...shuffle(lvl3)
+    ];
+
     this.renderCurrentCard();
   }
 
@@ -881,7 +1083,7 @@ class KroVocabApp {
       this.elements.swipeDeck.innerHTML = `
         <div class="flashcard" style="display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px;">
           <div style="font-size: 48px; margin-bottom: 12px;">🎉</div>
-          <h2 style="font-size: 22px; font-weight: 800; color: #FFFFFF; margin-bottom: 8px;">Klasse gemacht!</h2>
+          <h2 style="font-size: 22px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">Klasse gemacht!</h2>
           <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Du hast alle Vokabeln dieser Kategorie durchgearbeitet.</p>
           <button class="modal-btn-submit" onclick="app.initSwipeDeck()" style="width: auto; padding: 12px 24px;">Nochmal mischen</button>
         </div>
@@ -895,27 +1097,49 @@ class KroVocabApp {
     cardEl.id = 'active-card';
 
     const catName = (this.categories && this.categories[item.category]) ? this.categories[item.category].name : 'Allgemein';
-    const isHrDe = (this.state.direction !== 'de-hr');
+    const isTlDe = (this.state.direction !== 'de-tl' && this.state.direction !== 'de-hr');
+    const wordTl = item.tl || item.hr;
+    const exTl = item.exampleTl || item.exampleHr;
+
+    // SRS Level Badge Ermittlung
+    const srsItem = (this.state.srs && this.state.srs[item.id]) ? this.state.srs[item.id] : null;
+    const srsLevel = srsItem ? srsItem.level : 1;
+    let srsBadgeText = '🌱 Stufe 1';
+    let srsBadgeClass = 'lvl1';
+    let srsBadgeTitle = 'Neu / Im Training';
+    if (srsLevel === 2) {
+      srsBadgeText = '⚡ Stufe 2';
+      srsBadgeClass = 'lvl2';
+      srsBadgeTitle = 'Gefestigt (2x gewusst)';
+    } else if (srsLevel >= 3) {
+      srsBadgeText = '⭐ Stufe 3';
+      srsBadgeClass = 'lvl3';
+      srsBadgeTitle = 'Gemeistert (Langzeitgedächtnis)';
+    }
+    const srsBadgeHtml = `<span class="srs-card-badge ${srsBadgeClass}" title="${srsBadgeTitle}">${srsBadgeText}</span>`;
 
     cardEl.innerHTML = `
-      <div class="stamp stamp-know">ZNAM ✅</div>
-      <div class="stamp stamp-repeat">PONOVI ❌</div>
+      <div class="stamp stamp-know">ALAM KO NA ✅</div>
+      <div class="stamp stamp-repeat">ULITIN ❌</div>
       
       <div class="card-inner">
         <!-- Vorderseite -->
         <div class="card-face card-front">
           <div class="card-top-bar">
-            <span class="card-cat-tag">${catName}</span>
-            ${isHrDe ? `<button class="card-audio-btn" title="Kroatisch anhören" id="card-audio-front">🔊</button>` : ''}
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span class="card-cat-tag">${catName}</span>
+              ${srsBadgeHtml}
+            </div>
+            ${isTlDe ? `<button class="card-audio-btn" title="Tagalog anhören" id="card-audio-front">🔊</button>` : ''}
           </div>
 
           <div class="card-center-content">
-            <span class="word-label">${isHrDe ? 'Hrvatski' : 'Njemački (Deutsch)'}</span>
-            <div class="vocab-term">${isHrDe ? item.hr : item.de}</div>
+            <span class="word-label">${isTlDe ? 'Tagalog (Filipino)' : 'Deutsch'}</span>
+            <div class="vocab-term">${isTlDe ? wordTl : item.de}</div>
             
-            ${isHrDe && item.exampleHr ? `
+            ${isTlDe && exTl ? `
               <div class="vocab-example-box">
-                <div class="example-hr">"${item.exampleHr}"</div>
+                <div class="example-hr">"${exTl}"</div>
               </div>
             ` : ''}
           </div>
@@ -928,24 +1152,27 @@ class KroVocabApp {
         <!-- Rückseite -->
         <div class="card-face card-back">
           <div class="card-top-bar">
-            <span class="card-cat-tag">${catName}</span>
-            <button class="card-audio-btn" id="card-audio-back" title="Kroatisch anhören">🔊</button>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span class="card-cat-tag">${catName}</span>
+              ${srsBadgeHtml}
+            </div>
+            <button class="card-audio-btn" id="card-audio-back" title="Tagalog anhören">🔊</button>
           </div>
 
           <div class="card-center-content">
-            <span class="word-label" style="color: #60A5FA;">${isHrDe ? 'Bedeutung (Deutsch)' : 'Hrvatski (Kroatisch)'}</span>
-            <div class="vocab-term" style="font-size: 24px; color: #F8FAFC;">${isHrDe ? item.de : item.hr}</div>
+            <span class="word-label" style="color: #60A5FA;">${isTlDe ? 'Bedeutung (Deutsch)' : 'Tagalog (Filipino)'}</span>
+            <div class="vocab-term" style="font-size: 24px;">${isTlDe ? item.de : wordTl}</div>
             
-            ${item.exampleHr ? `
+            ${exTl ? `
               <div class="vocab-example-box" style="border-left-color: var(--accent-green);">
-                <div class="example-hr">"${item.exampleHr}"</div>
+                <div class="example-hr">"${exTl}"</div>
                 ${item.exampleDe ? `<div class="example-de">${item.exampleDe}</div>` : ''}
               </div>
             ` : ''}
           </div>
 
           <div class="card-footer-tip">
-            <span>👈 Wiederholen · Gekonnt 👉</span>
+            <span>👈 Ulitin (Wiederholen) · Alam ko na (Gekonnt) 👉</span>
           </div>
         </div>
       </div>
@@ -954,12 +1181,12 @@ class KroVocabApp {
     this.elements.swipeDeck.appendChild(cardEl);
     this.activeCardEl = cardEl;
 
-    // Audio Buttons (sprechen immer die kroatische Version)
+    // Audio Buttons (sprechen immer die Tagalog-Version)
     const audioFront = cardEl.querySelector('#card-audio-front');
     if (audioFront) {
       audioFront.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.speakCroatian(item.hr);
+        this.speakTagalog(wordTl);
       });
     }
 
@@ -967,7 +1194,7 @@ class KroVocabApp {
     if (audioBack) {
       audioBack.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.speakCroatian(item.hr);
+        this.speakTagalog(wordTl);
       });
     }
 
@@ -1062,11 +1289,11 @@ class KroVocabApp {
 
       const threshold = 80;
       if (currentX > threshold) {
-        // Swiped Right -> ZNAM!
+        // Swiped Right -> ALAM KO NA! (Gekonnt)
         this.animateCardExit(card, 1);
         this.handleSwipeChoice(true);
       } else if (currentX < -threshold) {
-        // Swiped Left -> PONOVI!
+        // Swiped Left -> ULITIN! (Wiederholen)
         this.animateCardExit(card, -1);
         this.handleSwipeChoice(false);
       } else {
@@ -1207,6 +1434,8 @@ class KroVocabApp {
 
   renderQuizQuestion() {
     this.stopQuizTimer();
+    if (this.currentView !== 'quiz' || !this.quizActive) return;
+
     if (this.quizIndex >= this.quizQueue.length) {
       this.quizActive = false;
       this.quizQuestionActive = false;
@@ -1214,16 +1443,22 @@ class KroVocabApp {
       return;
     }
 
+    if (this.elements.quizTimerFill) {
+      this.elements.quizTimerFill.style.width = '100%';
+      this.elements.quizTimerFill.classList.remove('timeout');
+    }
+
     const currentItem = this.quizQueue[this.quizIndex];
     this.quizCurrentItem = currentItem;
-    const isHrDe = (this.state.direction !== 'de-hr');
+    const isTlDe = (this.state.direction !== 'de-tl' && this.state.direction !== 'de-hr');
+    const wordTl = currentItem.tl || currentItem.hr;
 
     if (this.elements.quizQuestionSub) {
-      this.elements.quizQuestionSub.textContent = isHrDe 
+      this.elements.quizQuestionSub.textContent = isTlDe 
         ? "Was bedeutet auf Deutsch?" 
-        : "Kako se kaže na hrvatskom? (Kroatisch)";
+        : "Paano sabihin sa Tagalog? (Tagalog)";
     }
-    this.elements.quizWord.textContent = isHrDe ? currentItem.hr : currentItem.de;
+    this.elements.quizWord.textContent = isTlDe ? wordTl : currentItem.de;
 
     // Pick 3 wrong options from all vocab
     const allVocab = [...this.vocab, ...this.state.customVocab];
@@ -1238,7 +1473,8 @@ class KroVocabApp {
     options.forEach(opt => {
       const btn = document.createElement('button');
       btn.className = 'quiz-option-btn';
-      const optText = isHrDe ? opt.de : opt.hr;
+      const optWordTl = opt.tl || opt.hr;
+      const optText = isTlDe ? opt.de : optWordTl;
       btn.innerHTML = `<span>${optText}</span> <span>➜</span>`;
       btn.addEventListener('click', () => {
         this.playTone('pop');
@@ -1249,47 +1485,93 @@ class KroVocabApp {
 
     // 15s Timer starten (15000 ms)
     this.quizRemainingMs = 15000;
-    this.quizQuestionActive = true;
-    if (this.elements.quizTimerFill) {
-      this.elements.quizTimerFill.style.width = '100%';
-    }
     this.startQuizTimer();
   }
 
   startQuizTimer() {
     this.stopQuizTimer();
-    if (!this.quizQuestionActive || this.quizRemainingMs <= 0) return;
+    if (this.currentView !== 'quiz' || !this.quizActive) return;
 
-    this.quizTimerStart = Date.now();
     const totalDuration = 15000;
+    this.quizQuestionActive = true;
+    this.quizTimerStart = Date.now();
+    const initialRemaining = (typeof this.quizRemainingMs === 'number' && this.quizRemainingMs > 0) ? this.quizRemainingMs : totalDuration;
 
     this.quizTimer = setInterval(() => {
-      // Wenn der Nutzer nicht mehr aktiv auf dem Quiz-Tab ist: Timer pausieren
       if (this.currentView !== 'quiz') {
         this.pauseQuizTimer();
         return;
       }
-
       const elapsed = Date.now() - this.quizTimerStart;
-      const currentRemaining = Math.max(0, this.quizRemainingMs - elapsed);
-      const pct = (currentRemaining / totalDuration) * 100;
+      const remaining = Math.max(0, initialRemaining - elapsed);
+      const pct = (remaining / totalDuration) * 100;
 
       if (this.elements.quizTimerFill) {
         this.elements.quizTimerFill.style.width = `${pct}%`;
       }
 
-      if (currentRemaining <= 0) {
+      if (remaining <= 0) {
         this.stopQuizTimer();
-        this.quizQuestionActive = false;
-        this.handleQuizAnswer(null, false, this.quizCurrentItem);
+        this.handleQuizTimeout();
       }
     }, 100);
+  }
+
+  handleQuizTimeout() {
+    if (this.currentView !== 'quiz' || !this.quizActive) return;
+    this.stopQuizTimer();
+    this.quizQuestionActive = false;
+
+    // Timer-Balken rot / leer anzeigen
+    if (this.elements.quizTimerFill) {
+      this.elements.quizTimerFill.style.width = '0%';
+      this.elements.quizTimerFill.classList.add('timeout');
+    }
+
+    // Deutlicher Hinweis: Zeit abgelaufen!
+    if (this.elements.quizQuestionSub) {
+      this.elements.quizQuestionSub.innerHTML = '<span style="color: #EF4444; font-weight: 800;">⏱️ ZEIT ABGELAUFEN!</span>';
+    }
+
+    // Option-Buttons deaktivieren
+    const allBtns = this.elements.quizOptions.querySelectorAll('.quiz-option-btn');
+    allBtns.forEach(b => b.style.pointerEvents = 'none');
+
+    // Richtige Antwort nicht als Erfolg (grün), sondern als Auflösung in Gold hervorheben
+    const currentItem = this.quizCurrentItem;
+    if (currentItem) {
+      const isTlDe = (this.state.direction !== 'de-tl' && this.state.direction !== 'de-hr');
+      const wordTl = currentItem.tl || currentItem.hr;
+      const targetText = isTlDe ? currentItem.de : wordTl;
+
+      allBtns.forEach(b => {
+        if (b.textContent.includes(targetText)) {
+          b.classList.add('timeout-revealed');
+          b.innerHTML = `<span>${targetText}</span> <span style="font-size: 11px; opacity: 0.9;">💡 Richtige Lösung</span>`;
+        }
+      });
+    }
+
+    // Fehlerton abspielen (keine XP, keine Punkte)
+    this.playTone('wrong');
+
+    // 1.8 Sekunden zum Anschauen der Lösung geben, dann nächste Frage
+    this.quizNextTimeout = setTimeout(() => {
+      this.quizNextTimeout = null;
+      if (this.currentView !== 'quiz' || !this.quizActive) return;
+      this.quizIndex++;
+      this.renderQuizQuestion();
+    }, 1800);
   }
 
   pauseQuizTimer() {
     if (this.quizTimer) {
       clearInterval(this.quizTimer);
       this.quizTimer = null;
+    }
+    if (this.quizNextTimeout) {
+      clearTimeout(this.quizNextTimeout);
+      this.quizNextTimeout = null;
     }
     if (this.quizQuestionActive && this.quizTimerStart) {
       const elapsed = Date.now() - this.quizTimerStart;
@@ -1309,6 +1591,10 @@ class KroVocabApp {
       clearInterval(this.quizTimer);
       this.quizTimer = null;
     }
+    if (this.quizNextTimeout) {
+      clearTimeout(this.quizNextTimeout);
+      this.quizNextTimeout = null;
+    }
     this.quizTimerStart = null;
   }
 
@@ -1320,8 +1606,9 @@ class KroVocabApp {
     const allBtns = this.elements.quizOptions.querySelectorAll('.quiz-option-btn');
     allBtns.forEach(b => b.style.pointerEvents = 'none');
 
-    const isHrDe = (this.state.direction !== 'de-hr');
-    const targetText = isHrDe ? currentItem.de : currentItem.hr;
+    const isTlDe = (this.state.direction !== 'de-tl' && this.state.direction !== 'de-hr');
+    const wordTl = currentItem.tl || currentItem.hr;
+    const targetText = isTlDe ? currentItem.de : wordTl;
 
     this.incrementDailyProgress(1);
 
@@ -1330,8 +1617,8 @@ class KroVocabApp {
       this.quizScore += 20;
       this.playTone('correct');
       this.addXP(20);
-      if (!isHrDe) {
-        this.speakCroatian(currentItem.hr);
+      if (!isTlDe) {
+        this.speakTagalog(wordTl);
       }
     } else {
       if (clickedBtn) clickedBtn.classList.add('wrong');
@@ -1346,7 +1633,9 @@ class KroVocabApp {
 
     this.elements.quizScore.textContent = `${this.quizScore} Pkt`;
 
-    setTimeout(() => {
+    this.quizNextTimeout = setTimeout(() => {
+      this.quizNextTimeout = null;
+      if (this.currentView !== 'quiz' || !this.quizActive) return;
       this.quizIndex++;
       this.renderQuizQuestion();
     }, 1100);
@@ -1357,6 +1646,13 @@ class KroVocabApp {
     this.quizActive = false;
     this.quizQuestionActive = false;
     this.playTone('victory');
+    if (this.elements.quizQuestionSub) {
+      this.elements.quizQuestionSub.textContent = "Ergebnis";
+    }
+    if (this.elements.quizTimerFill) {
+      this.elements.quizTimerFill.style.width = '100%';
+      this.elements.quizTimerFill.classList.remove('timeout');
+    }
     this.elements.quizWord.textContent = `Quiz beendet! 🏆`;
     this.elements.quizOptions.innerHTML = `
       <div style="text-align: center; padding: 20px;">
@@ -1368,9 +1664,9 @@ class KroVocabApp {
     `;
   }
 
-  // --- SPIKA-TRAINER ENGINE (Echte Konversation & Chunks) ---
+  // --- SPIKA / PINOY-DIALOGE ENGINE (Echte Konversation & Chunks) ---
   startSpikaTrainer() {
-    const dialogs = (typeof SPIKA_DIALOGS !== 'undefined') ? SPIKA_DIALOGS : (window.SPIKA_DIALOGS || []);
+    const dialogs = (typeof SPIKA_DIALOGS !== 'undefined') ? SPIKA_DIALOGS : (window.SPIKA_DIALOGS || window.PINOY_DIALOGS || []);
     if (!dialogs || dialogs.length === 0) return;
 
     this.spikaQueue = [...dialogs].sort(() => Math.random() - 0.5);
@@ -1383,8 +1679,8 @@ class KroVocabApp {
   renderSpikaScenario() {
     if (this.spikaIndex >= this.spikaQueue.length) {
       if (this.elements.spikaScenarioEmoji) this.elements.spikaScenarioEmoji.textContent = "🏆";
-      if (this.elements.spikaScenarioTitle) this.elements.spikaScenarioTitle.textContent = "Spika-Trainer gemeistert!";
-      if (this.elements.spikaScenarioDesc) this.elements.spikaScenarioDesc.textContent = `Du hast alle 12 Alltagssituationen gemeistert und ${this.spikaScore} Punkte erzielt! Dein Gespür für authentische kroatische Reaktionen ist exzellent.`;
+      if (this.elements.spikaScenarioTitle) this.elements.spikaScenarioTitle.textContent = "Pinoy-Dialoge gemeistert!";
+      if (this.elements.spikaScenarioDesc) this.elements.spikaScenarioDesc.textContent = `Du hast alle 12 Alltagssituationen gemeistert und ${this.spikaScore} Punkte erzielt! Dein Gespür für authentische Tagalog-Reaktionen ist fabelhaft.`;
       if (this.elements.spikaScenarioPrompt) this.elements.spikaScenarioPrompt.textContent = "";
       if (this.elements.spikaOptionsList) {
         this.elements.spikaOptionsList.innerHTML = `
@@ -1441,17 +1737,17 @@ class KroVocabApp {
 
     if (this.elements.spikaScoreVal) this.elements.spikaScoreVal.textContent = `${this.spikaScore} Pkt`;
 
-    // Zeige Feedback Box mit Spika-Tipp
+    // Zeige Feedback Box mit Pinoy-Tipp
     if (this.elements.spikaFeedbackBox) {
       this.elements.spikaFeedbackBox.style.display = 'block';
-      this.elements.spikaFeedbackTitle.textContent = chosenOpt.isCorrect ? '✅ Odlično! Spika-Tipp:' : '💡 Spika-Tipp:';
+      this.elements.spikaFeedbackTitle.textContent = chosenOpt.isCorrect ? '✅ Mahusay! Pinoy-Tipp:' : '💡 Pinoy-Tipp:';
       this.elements.spikaFeedbackText.textContent = chosenOpt.feedback;
 
-      // Audio Button spricht die korrekte kroatische Formulierung
+      // Audio Button spricht die korrekte Tagalog Formulierung
       const correctOpt = scenario.options.find(o => o.isCorrect);
       const cleanSpeech = correctOpt ? correctOpt.text.replace(/[»«"]/g, '').trim() : '';
       if (this.elements.btnSpikaAudio) {
-        this.elements.btnSpikaAudio.onclick = () => this.speakCroatian(cleanSpeech);
+        this.elements.btnSpikaAudio.onclick = () => this.speakTagalog(cleanSpeech);
       }
 
       if (this.elements.btnSpikaNext) {
@@ -1472,6 +1768,7 @@ class KroVocabApp {
     this.matchSeconds = 0;
     this.matchedPairsCount = 0;
     this.selectedMatchTile = null;
+    this.matchGridLocked = false;
     this.elements.matchTimerText.textContent = '00:00';
 
     // Bestzeit Badge aktualisieren
@@ -1491,7 +1788,8 @@ class KroVocabApp {
 
     const tiles = [];
     selectedVocab.forEach(item => {
-      tiles.push({ id: item.id, type: 'hr', text: item.hr, matchId: item.id });
+      const wordTl = item.tl || item.hr;
+      tiles.push({ id: item.id, type: 'tl', text: wordTl, matchId: item.id });
       tiles.push({ id: item.id, type: 'de', text: item.de, matchId: item.id });
     });
 
@@ -1521,14 +1819,11 @@ class KroVocabApp {
   }
 
   pauseMatchTimer() {
-    if (this.matchTimerInterval) {
-      clearInterval(this.matchTimerInterval);
-      this.matchTimerInterval = null;
-    }
+    this.stopMatchTimer();
   }
 
   resumeMatchTimer() {
-    if (this.currentView === 'match' && this.matchedPairsCount < 6 && !this.matchTimerInterval) {
+    if (this.currentView === 'match' && this.matchedPairsCount < 6) {
       this.startMatchTimer();
     }
   }
@@ -1543,88 +1838,97 @@ class KroVocabApp {
   renderMatchGrid() {
     this.elements.matchGrid.innerHTML = '';
     this.matchTiles.forEach((tile, index) => {
-      const el = document.createElement('div');
-      el.className = 'match-tile';
-      el.textContent = tile.text;
-      el.dataset.index = index;
-      el.addEventListener('click', () => this.handleMatchTileClick(el, tile));
-      this.elements.matchGrid.appendChild(el);
+      const btn = document.createElement('button');
+      btn.className = 'match-tile';
+      btn.textContent = tile.text;
+      btn.dataset.index = index;
+      btn.addEventListener('click', () => this.handleMatchTileClick(btn, tile));
+      this.elements.matchGrid.appendChild(btn);
     });
   }
 
   handleMatchTileClick(el, tile) {
+    if (this.matchGridLocked) return;
     if (el.classList.contains('matched')) return;
 
-    // 1. Wenn die gleiche Kachel nochmal angetippt wird -> Abwählen! (Deselect)
+    // Fall 1: Bereits ausgewählte Kachel nochmals angetippt -> ABWÄHLEN (Deselect)
     if (this.selectedMatchTile && this.selectedMatchTile.el === el) {
       el.classList.remove('selected');
       this.selectedMatchTile = null;
-      this.playTone('deselect');
+      this.playTone('pop');
       return;
     }
 
-    // 2. Wenn eine andere Kachel der gleichen Sprache angetippt wird -> Auswahl umschalten
-    if (this.selectedMatchTile && this.selectedMatchTile.tile.type === tile.type) {
-      this.selectedMatchTile.el.classList.remove('selected');
-      this.selectedMatchTile = { el, tile };
-      el.classList.add('selected');
-      this.playTone('select');
-      return;
-    }
-
+    // Fall 2: Noch keine Kachel gewählt -> Erste Kachel auswählen
     if (!this.selectedMatchTile) {
-      // Erste Kachel ausgewählt
       this.selectedMatchTile = { el, tile };
       el.classList.add('selected');
       this.playTone('select');
-    } else {
-      // Zweite Kachel ausgewählt
-      const first = this.selectedMatchTile;
-      
-      if (first.tile.type !== tile.type && first.tile.matchId === tile.matchId) {
-        // Correct Pair!
-        first.el.classList.remove('selected');
-        first.el.classList.add('matched');
-        el.classList.add('matched');
-        this.selectedMatchTile = null;
-        this.matchedPairsCount++;
-        this.playTone('match');
-        this.addXP(25);
+      return;
+    }
 
-        if (tile.type === 'hr') this.speakCroatian(tile.text);
-        else this.speakCroatian(first.tile.text);
+    // Fall 3: Zweite Kachel angetippt
+    const first = this.selectedMatchTile;
 
-        if (this.matchedPairsCount === 6) {
-          this.stopMatchTimer();
-          const timeSpent = this.matchSeconds;
-          let isRecord = false;
-          if (!this.state.bestMatchTime || timeSpent < this.state.bestMatchTime) {
-            this.state.bestMatchTime = timeSpent;
-            isRecord = true;
-          }
-          this.incrementDailyProgress(2);
-          this.saveState();
-          this.playTone('victory');
-          setTimeout(() => {
-            const timeStr = this.elements.matchTimerText.textContent;
-            const msg = isRecord 
-              ? `🏆 NEUER REKORD! Alle Paare in ${timeStr} gelöst! +150 XP!` 
-              : `Fantastično! 🎉 Alle Paare in ${timeStr} gefunden! +150 XP!`;
-            alert(msg);
-            this.addXP(150);
-            this.initMatchGame();
-          }, 450);
+    // Fall 3a: Gleiche Sprache angetippt (z.B. beide Tagalog oder beide Deutsch)
+    // -> Benutzer möchte seine Auswahl wechseln statt eines Fehlversuchs!
+    if (first.tile.type === tile.type) {
+      first.el.classList.remove('selected');
+      this.selectedMatchTile = { el, tile };
+      el.classList.add('selected');
+      this.playTone('select');
+      return;
+    }
+
+    // Fall 3b: Unterschiedliche Sprachen angetippt -> Match prüfen!
+    if (first.tile.matchId === tile.matchId) {
+      // Treffer (Correct Pair!)
+      first.el.classList.remove('selected');
+      first.el.classList.add('matched');
+      el.classList.add('matched');
+      this.selectedMatchTile = null;
+      this.matchedPairsCount++;
+      this.playTone('match');
+      this.addXP(25);
+
+      if (tile.type === 'tl' || tile.type === 'hr') this.speakTagalog(tile.text);
+      else this.speakTagalog(first.tile.text);
+
+      if (this.matchedPairsCount === 6) {
+        this.stopMatchTimer();
+        const timeSpent = this.matchSeconds;
+        let isRecord = false;
+        if (!this.state.bestMatchTime || timeSpent < this.state.bestMatchTime) {
+          this.state.bestMatchTime = timeSpent;
+          isRecord = true;
         }
-      } else {
-        // Wrong Pair
-        el.classList.add('selected');
-        this.playTone('wrong');
+        this.incrementDailyProgress(2);
+        this.saveState();
+        this.playTone('victory');
+
+        const bm = String(Math.floor(this.state.bestMatchTime / 60)).padStart(2, '0');
+        const bs = String(this.state.bestMatchTime % 60).padStart(2, '0');
+        if (this.elements.matchBestBadge) {
+          this.elements.matchBestBadge.textContent = `🏆 Best: ${bm}:${bs}`;
+        }
+
         setTimeout(() => {
-          first.el.classList.remove('selected');
-          el.classList.remove('selected');
-          this.selectedMatchTile = null;
-        }, 500);
+          alert(`🎉 Alle 6 Paare gematcht in ${timeSpent}s! ${isRecord ? 'Neuer persönlicher Rekord! 🏆' : ''}`);
+          this.initMatchGame();
+        }, 450);
       }
+    } else {
+      // Falsches Paar (Wrong Pair!)
+      this.matchGridLocked = true;
+      first.el.classList.add('wrong');
+      el.classList.add('wrong');
+      this.playTone('wrong');
+      setTimeout(() => {
+        first.el.classList.remove('selected', 'wrong');
+        el.classList.remove('wrong');
+        this.selectedMatchTile = null;
+        this.matchGridLocked = false;
+      }, 500);
     }
   }
 
@@ -1636,9 +1940,11 @@ class KroVocabApp {
     const query = filterQuery.toLowerCase().trim();
 
     const filtered = pool.filter(item => {
-      return item.hr.toLowerCase().includes(query) ||
+      const wordTl = item.tl || item.hr || '';
+      const exTl = item.exampleTl || item.exampleHr || '';
+      return wordTl.toLowerCase().includes(query) ||
              item.de.toLowerCase().includes(query) ||
-             (item.exampleHr && item.exampleHr.toLowerCase().includes(query));
+             (exTl && exTl.toLowerCase().includes(query));
     });
 
     this.elements.vocabList.innerHTML = '';
@@ -1658,22 +1964,24 @@ class KroVocabApp {
       
       const isFav = this.state.favorites.includes(item.id);
       const catName = (this.categories && this.categories[item.category]) ? this.categories[item.category].name : 'Eigene';
+      const wordTl = item.tl || item.hr;
+      const exTl = item.exampleTl || item.exampleHr;
 
       row.innerHTML = `
         <div class="vocab-row-info">
-          <div class="vocab-row-hr">${item.hr}</div>
+          <div class="vocab-row-hr">${wordTl}</div>
           <div class="vocab-row-de">${item.de}</div>
-          <div class="vocab-row-cat">${catName} ${item.exampleHr ? `· "${item.exampleHr}"` : ''}</div>
+          <div class="vocab-row-cat">${catName} ${exTl ? `· "${exTl}"` : ''}</div>
         </div>
         <div class="vocab-row-actions">
-          <button class="row-action-btn audio-btn" title="Anhören">🔊</button>
+          <button class="row-action-btn audio-btn" title="Tagalog anhören">🔊</button>
           <button class="row-action-btn star ${isFav ? 'active' : ''}" title="Favorit">⭐</button>
         </div>
       `;
 
       // Audio
       row.querySelector('.audio-btn').addEventListener('click', () => {
-        this.speakCroatian(item.hr);
+        this.speakTagalog(wordTl);
       });
 
       // Favorite
@@ -1694,19 +2002,21 @@ class KroVocabApp {
   }
 
   addCustomVocabulary() {
-    const hr = this.elements.inputHr.value.trim();
+    const tl = this.elements.inputHr.value.trim();
     const de = this.elements.inputDe.value.trim();
-    const exHr = this.elements.inputExHr.value.trim();
+    const exTl = this.elements.inputExHr.value.trim();
     const exDe = this.elements.inputExDe.value.trim();
 
-    if (!hr || !de) return;
+    if (!tl || !de) return;
 
     const newItem = {
       id: Date.now(),
-      hr,
+      tl,
+      hr: tl,
       de,
       category: 'slang',
-      exampleHr: exHr,
+      exampleTl: exTl,
+      exampleHr: exTl,
       exampleDe: exDe,
       isCustom: true
     };
@@ -1720,7 +2030,7 @@ class KroVocabApp {
     this.playTone('success');
     this.addXP(30);
 
-    alert(`Vokabel "${hr}" erfolgreich hinzugefügt! +30 XP!`);
+    alert(`Vokabel "${tl}" erfolgreich hinzugefügt! +30 XP!`);
     if (this.currentView === 'list') {
       this.renderDictionary();
     }
@@ -1729,20 +2039,21 @@ class KroVocabApp {
 
 // Start app when DOM is ready (or immediately if already loaded)
 let app;
-function initKroVocabApp() {
+function initTagalogVocabApp() {
   if (!app) {
-    app = new KroVocabApp();
+    app = new TagalogVocabApp();
     if (typeof window !== 'undefined') {
       window.app = app;
+      window.TagalogVocabApp = TagalogVocabApp;
+      window.KroVocabApp = TagalogVocabApp;
     }
   }
 }
 
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initKroVocabApp);
+    document.addEventListener('DOMContentLoaded', initTagalogVocabApp);
   } else {
-    initKroVocabApp();
+    initTagalogVocabApp();
   }
 }
-
