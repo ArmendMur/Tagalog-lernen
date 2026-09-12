@@ -172,8 +172,35 @@
             <input type="text" id="vocab-search-input" class="search-input" placeholder="Tagalog, Slang oder Beispielsatz suchen...">
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Wortschatz-Übersicht</span>
+          <!-- Status-Filter & Vokabel-Zähler Leiste -->
+          <div class="dict-filter-bar" id="dict-filter-bar">
+            <button class="dict-filter-chip active" data-status="all">
+              <span>Lahat (Alle)</span>
+              <span class="dict-chip-count" id="count-all">0</span>
+            </button>
+            <button class="dict-filter-chip" data-status="mastered">
+              <span>✅ Gemeistert</span>
+              <span class="dict-chip-count" id="count-mastered">0</span>
+            </button>
+            <button class="dict-filter-chip" data-status="learning">
+              <span>⚡ Gefestigt</span>
+              <span class="dict-chip-count" id="count-learning">0</span>
+            </button>
+            <button class="dict-filter-chip" data-status="practicing">
+              <span>🔄 In Übung</span>
+              <span class="dict-chip-count" id="count-practicing">0</span>
+            </button>
+            <button class="dict-filter-chip" data-status="new">
+              <span>🌱 Neu</span>
+              <span class="dict-chip-count" id="count-new">0</span>
+            </button>
+          </div>
+
+          <div class="dict-meta-bar">
+            <div class="dict-count-summary" id="dict-count-summary">
+              <span class="dict-count-icon">📖</span>
+              <span id="dict-count-text">0 Vokabeln</span>
+            </div>
             <button id="btn-open-add-modal" class="stat-pill" style="cursor: pointer; background: rgba(37, 99, 235, 0.15); border-color: rgba(37, 99, 235, 0.3); color: var(--accent-ph-blue);">
               <span>➕</span> <span>Eigene Vokabel</span>
             </button>
@@ -296,7 +323,7 @@
           </div>
 
           <div style="margin-top: 8px; text-align: center;">
-            <div style="font-size: 11px; color: var(--text-muted);">Version 3.0.0 · Automatische Synchronisierung</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Version 3.1.0 · Automatische Synchronisierung</div>
           </div>
 
         </div>

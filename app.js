@@ -11,6 +11,7 @@ class TagalogVocabApp {
     this.categories = (typeof CATEGORIES !== 'undefined') ? CATEGORIES : ((typeof window !== 'undefined' && window.CATEGORIES) ? window.CATEGORIES : {});
     this.currentCategory = 'all';
     this.currentView = 'swipe';
+    this.dictStatusFilter = 'all';
     
     // User State
     this.state = this.loadState();
@@ -606,6 +607,13 @@ class TagalogVocabApp {
       searchInput: document.getElementById('vocab-search-input'),
       vocabList: document.getElementById('vocab-scroll-list'),
       btnAddCustom: document.getElementById('btn-open-add-modal'),
+      dictFilterBar: document.getElementById('dict-filter-bar'),
+      dictCountText: document.getElementById('dict-count-text'),
+      dictChipCountAll: document.getElementById('count-all'),
+      dictChipCountMastered: document.getElementById('count-mastered'),
+      dictChipCountLearning: document.getElementById('count-learning'),
+      dictChipCountPracticing: document.getElementById('count-practicing'),
+      dictChipCountNew: document.getElementById('count-new'),
       
       // Modal
       modalOverlay: document.getElementById('add-modal-overlay'),
@@ -735,6 +743,24 @@ class TagalogVocabApp {
     this.elements.searchInput.addEventListener('input', (e) => {
       this.renderDictionary(e.target.value);
     });
+
+    // Dictionary Status Filter Chips
+    if (this.elements.dictFilterBar) {
+      this.elements.dictFilterBar.addEventListener('click', (e) => {
+        const chip = e.target.closest('.dict-filter-chip');
+        if (!chip) return;
+        const status = chip.dataset.status;
+        if (!status) return;
+
+        this.dictStatusFilter = status;
+        this.elements.dictFilterBar.querySelectorAll('.dict-filter-chip').forEach(c => {
+          c.classList.toggle('active', c === chip);
+        });
+
+        this.renderDictionary(this.elements.searchInput ? this.elements.searchInput.value : '');
+        this.playTone('pop');
+      });
+    }
 
     // Modal Events
     this.elements.btnAddCustom.addEventListener('click', () => {
@@ -1026,6 +1052,9 @@ class TagalogVocabApp {
       this.renderStats();
       if (this.currentView === 'swipe') {
         this.initSwipeDeck();
+      }
+      if (this.currentView === 'list') {
+        this.renderDictionary(this.elements.searchInput ? this.elements.searchInput.value : '');
       }
       this.playTone('repeat');
       if (typeof window !== 'undefined' && window.alert) {
@@ -1939,7 +1968,50 @@ class TagalogVocabApp {
     const pool = this.getActiveVocab();
     const query = filterQuery.toLowerCase().trim();
 
-    const filtered = pool.filter(item => {
+    // 1. Calculate status counts across current category pool
+    let countAll = pool.length;
+    let countMastered = 0;
+    let countLearning = 0;
+    let countPracticing = 0;
+    let countNew = 0;
+
+    pool.forEach(item => {
+      const srs = (this.state.srs && this.state.srs[item.id]) ? this.state.srs[item.id] : null;
+      const lvl = srs ? (srs.level || 0) : 0;
+      if (lvl >= 3) {
+        countMastered++;
+      } else if (lvl === 2) {
+        countLearning++;
+      } else if (lvl === 1) {
+        countPracticing++;
+      } else {
+        countNew++;
+      }
+    });
+
+    // Update filter chip counters
+    if (this.elements.dictChipCountAll) this.elements.dictChipCountAll.textContent = countAll;
+    if (this.elements.dictChipCountMastered) this.elements.dictChipCountMastered.textContent = countMastered;
+    if (this.elements.dictChipCountLearning) this.elements.dictChipCountLearning.textContent = countLearning;
+    if (this.elements.dictChipCountPracticing) this.elements.dictChipCountPracticing.textContent = countPracticing;
+    if (this.elements.dictChipCountNew) this.elements.dictChipCountNew.textContent = countNew;
+
+    // 2. Filter by status filter
+    const statusFilter = this.dictStatusFilter || 'all';
+    let statusFiltered = pool.filter(item => {
+      if (statusFilter === 'all') return true;
+      const srs = (this.state.srs && this.state.srs[item.id]) ? this.state.srs[item.id] : null;
+      const lvl = srs ? (srs.level || 0) : 0;
+      if (statusFilter === 'mastered') return lvl >= 3;
+      if (statusFilter === 'learning') return lvl === 2;
+      if (statusFilter === 'practicing') return lvl === 1;
+      if (statusFilter === 'new') return !srs || lvl === 0;
+      return true;
+    });
+
+    // 3. Filter by search query
+    const filtered = statusFiltered.filter(item => {
+      if (!query) return true;
       const wordTl = item.tl || item.hr || '';
       const exTl = item.exampleTl || item.exampleHr || '';
       return wordTl.toLowerCase().includes(query) ||
@@ -1947,12 +2019,23 @@ class TagalogVocabApp {
              (exTl && exTl.toLowerCase().includes(query));
     });
 
+    // 4. Update dictionary count summary text
+    if (this.elements.dictCountText) {
+      if (query || statusFilter !== 'all') {
+        this.elements.dictCountText.textContent = `${filtered.length} von ${countAll} Vokabeln`;
+      } else {
+        this.elements.dictCountText.textContent = `${countAll} Vokabeln`;
+      }
+    }
+
     this.elements.vocabList.innerHTML = '';
 
     if (filtered.length === 0) {
       this.elements.vocabList.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-          Keine Vokabeln gefunden.
+          <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+          <div style="font-weight: 600;">Keine passenden Vokabeln gefunden.</div>
+          <div style="font-size: 11.5px; margin-top: 4px; color: var(--text-muted);">Probiere einen anderen Suchbegriff oder Status-Filter.</div>
         </div>
       `;
       return;
@@ -1967,9 +2050,40 @@ class TagalogVocabApp {
       const wordTl = item.tl || item.hr;
       const exTl = item.exampleTl || item.exampleHr;
 
+      // Status indicator
+      const srs = (this.state.srs && this.state.srs[item.id]) ? this.state.srs[item.id] : null;
+      const lvl = srs ? (srs.level || 0) : 0;
+
+      let statusClass = 'status-new';
+      let statusLabel = 'Neu';
+      let statusIcon = '🌱';
+      let statusTitle = 'Noch nicht im Kartendeck geübt';
+
+      if (lvl >= 3) {
+        statusClass = 'status-mastered';
+        statusLabel = 'Gemeistert';
+        statusIcon = '✅';
+        statusTitle = `Gemeistert (Stufe 3 · ${srs.correct || 3}x gewusst)`;
+      } else if (lvl === 2) {
+        statusClass = 'status-learning';
+        statusLabel = 'Gefestigt';
+        statusIcon = '⚡';
+        statusTitle = `Gefestigt (Stufe 2 · ${srs.correct || 2}x gewusst)`;
+      } else if (lvl === 1) {
+        statusClass = 'status-practicing';
+        statusLabel = 'In Übung';
+        statusIcon = '🔄';
+        statusTitle = `In Übung (Stufe 1)`;
+      }
+
       row.innerHTML = `
         <div class="vocab-row-info">
-          <div class="vocab-row-hr">${wordTl}</div>
+          <div class="vocab-row-top">
+            <div class="vocab-row-hr">${wordTl}</div>
+            <span class="vocab-status-badge ${statusClass}" title="${statusTitle}">
+              ${statusIcon} <span>${statusLabel}</span>
+            </span>
+          </div>
           <div class="vocab-row-de">${item.de}</div>
           <div class="vocab-row-cat">${catName} ${exTl ? `· "${exTl}"` : ''}</div>
         </div>
