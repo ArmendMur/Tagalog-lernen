@@ -471,7 +471,8 @@ main.main-content {
   color: var(--text-secondary);
 }
 
-.card-audio-btn {
+.card-audio-btn,
+.card-fav-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -483,11 +484,29 @@ main.main-content {
   justify-content: center;
   font-size: 16px;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.card-fav-btn {
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.card-fav-btn.active {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--accent-gold);
+  opacity: 1;
+}
+
+.card-audio-btn:active,
+.card-fav-btn:active {
+  transform: scale(0.9);
 }
 
 .card-audio-btn:active {
-  transform: scale(0.9);
   background: var(--accent-hr-blue);
   color: #FFFFFF;
 }
@@ -898,7 +917,7 @@ main.main-content {
 
 .spika-feedback-text {
   font-size: 12.5px;
-  color: #E2E8F0;
+  color: var(--text-primary);
   line-height: 1.45;
 }
 
@@ -1272,6 +1291,18 @@ main.main-content {
   color: var(--accent-gold);
   background: rgba(245, 158, 11, 0.15);
   border-color: rgba(245, 158, 11, 0.3);
+}
+
+.row-action-btn.delete-btn {
+  color: var(--accent-hr-red);
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  font-size: 14px;
+}
+
+.row-action-btn.delete-btn:active {
+  background: rgba(239, 68, 68, 0.22);
+  transform: scale(0.92);
 }
 
 /* =========================================================
@@ -1746,4 +1777,40 @@ html[data-theme="light"] .level-card {
   border: 1px solid rgba(15, 23, 42, 0.12);
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }
+
+html[data-theme="light"] .quiz-option-btn.correct,
+html[data-theme="light"] .spika-option-card.correct {
+  background: rgba(16, 185, 129, 0.16) !important;
+  border-color: #059669 !important;
+  color: #065F46 !important;
+}
+
+html[data-theme="light"] .quiz-option-btn.wrong,
+html[data-theme="light"] .spika-option-card.wrong,
+html[data-theme="light"] .match-tile.wrong {
+  background: rgba(239, 68, 68, 0.14) !important;
+  border-color: #DC2626 !important;
+  color: #991B1B !important;
+}
+
+html[data-theme="light"] .quiz-option-btn.timeout-revealed {
+  background: rgba(245, 158, 11, 0.16) !important;
+  border-color: #D97706 !important;
+  color: #92400E !important;
+}
+
+html[data-theme="light"] .spika-scenario-prompt,
+html[data-theme="light"] .quiz-score-badge,
+html[data-theme="light"] .goal-reward-badge {
+  color: #B45309;
+}
+
+html[data-theme="light"] .stat-pill.xp {
+  color: #1D4ED8;
+}
+
+html[data-theme="light"] .stat-pill.streak {
+  color: #C2410C;
+}
+
 

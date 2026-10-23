@@ -17,7 +17,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23090D16'/><circle cx='50' cy='50' r='38' fill='%232563EB'/><path d='M50 12 A38 38 0 0 1 88 50 L50 50 Z' fill='%23EF4444'/><polygon points='12,12 50,50 12,88' fill='%23FFFFFF'/><circle cx='26' cy='50' r='10' fill='%23FBBF24'/><text x='64' y='60' font-size='26' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif' font-weight='900'>TL</text></svg>">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <link rel="stylesheet" href="styles.css?v=3.1.0">
+  <link rel="stylesheet" href="styles.css?v=3.2.0">
 </head>
 <body>
 
@@ -194,6 +194,10 @@
               <span>🌱 Neu</span>
               <span class="dict-chip-count" id="count-new">0</span>
             </button>
+            <button class="dict-filter-chip" data-status="fav">
+              <span>⭐ Favoriten</span>
+              <span class="dict-chip-count" id="count-fav">0</span>
+            </button>
           </div>
 
           <div class="dict-meta-bar">
@@ -323,7 +327,7 @@
           </div>
 
           <div style="margin-top: 8px; text-align: center;">
-            <div style="font-size: 11px; color: var(--text-muted);">Version 3.1.0 · Automatische Synchronisierung</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Version 3.2.0 · Automatische Synchronisierung</div>
           </div>
 
         </div>
@@ -365,6 +369,18 @@
         <form id="add-vocab-form">
           <input type="text" id="modal-input-hr" class="modal-input" placeholder="Tagalog (z.B. Salamat po)" required>
           <input type="text" id="modal-input-de" class="modal-input" placeholder="Deutsch (z.B. Vielen Dank)" required>
+          <select id="modal-input-cat" class="modal-input">
+            <option value="slang">🔥 Slang & Trends</option>
+            <option value="kain">🍲 Pagkain & Tambay (Essen)</option>
+            <option value="smalltalk">👋 Kamustahan & Phrasen</option>
+            <option value="lakwatsa">🛺 Lakwatsa & Unterwegs</option>
+            <option value="alltag">🏠 Araw-Araw (Alltag & Markt)</option>
+            <option value="damdamin">❤️ Damdamin & Kilig (Gefühle)</option>
+            <option value="verben">🏃 Kilos (Wichtige Verben)</option>
+            <option value="pridjevi">✨ Katangian (Eigenschaften)</option>
+            <option value="rijeci">🔑 Salita (Wichtige Wörter)</option>
+            <option value="veznici">🔗 Kataga (Partikel & Bindewörter)</option>
+          </select>
           <input type="text" id="modal-input-ex-hr" class="modal-input" placeholder="Beispielsatz Tagalog (optional)">
           <input type="text" id="modal-input-ex-de" class="modal-input" placeholder="Beispielsatz Deutsch (optional)">
           <button type="submit" class="modal-btn-submit">Speichern & +30 XP erhalten</button>
@@ -388,13 +404,13 @@
   </div>
 
   <!-- Scripts mit Cache-Busting Version Query Parameter -->
-  <script src="vocab-data.js?v=3.1.0"></script>
-  <script src="app.js?v=3.1.0"></script>
+  <script src="vocab-data.js?v=3.2.0"></script>
+  <script src="app.js?v=3.2.0"></script>
   <script>
     // Automatisches Service Worker Update-Handling
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=3.1.0').then(reg => {
+        navigator.serviceWorker.register('sw.js?v=3.2.0').then(reg => {
           // Prüfe bei jedem Seitenaufruf sofort auf Updates
           reg.update();
 

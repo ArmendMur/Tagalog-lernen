@@ -614,6 +614,7 @@ class TagalogVocabApp {
       dictChipCountLearning: document.getElementById('count-learning'),
       dictChipCountPracticing: document.getElementById('count-practicing'),
       dictChipCountNew: document.getElementById('count-new'),
+      dictChipCountFav: document.getElementById('count-fav'),
       
       // Modal
       modalOverlay: document.getElementById('add-modal-overlay'),
@@ -621,6 +622,7 @@ class TagalogVocabApp {
       modalForm: document.getElementById('add-vocab-form'),
       inputHr: document.getElementById('modal-input-hr'),
       inputDe: document.getElementById('modal-input-de'),
+      inputCat: document.getElementById('modal-input-cat'),
       inputExHr: document.getElementById('modal-input-ex-hr'),
       inputExDe: document.getElementById('modal-input-ex-de'),
 
@@ -827,7 +829,11 @@ class TagalogVocabApp {
     if (this.currentView === 'swipe') {
       this.initSwipeDeck();
     } else if (this.currentView === 'quiz') {
-      this.startQuiz();
+      if (this.quizMode === 'spika') {
+        this.startSpikaTrainer();
+      } else {
+        this.startQuiz();
+      }
     } else if (this.currentView === 'match') {
       this.initMatchGame();
     } else if (this.currentView === 'list') {
@@ -1067,6 +1073,7 @@ class TagalogVocabApp {
   // 1. FLASHCARD SWIPE ENGINE (Spaced Repetition Priorisierung)
   // =========================================================
   initSwipeDeck() {
+    this.isCardTransitioning = false;
     const pool = this.getActiveVocab();
     if (!pool || pool.length === 0) {
       this.cardQueue = [];
@@ -1075,8 +1082,8 @@ class TagalogVocabApp {
     }
 
     // SRS Priorisierung:
-    // Stufe 1 (Neu / Noch nicht verinnerlicht / Falsch gewusst) -> Höchste Priorität (vorne im Stapel)
-    // Stufe 2 (Gefestigt / 1-2x richtig gewusst) -> Mittlere Priorität
+    // Stufe 0/1 (Neu / Noch nicht verinnerlicht / Falsch gewusst) -> Höchste Priorität (vorne im Stapel)
+    // Stufe 2 (Gefestigt / 2x richtig gewusst) -> Mittlere Priorität
     // Stufe 3 (Gemeistert / 3x richtig gewusst) -> Am Ende des Stapels zur Auffrischung
     const lvl1 = [];
     const lvl2 = [];
@@ -1084,8 +1091,8 @@ class TagalogVocabApp {
 
     pool.forEach(item => {
       const srs = this.state.srs[item.id];
-      const level = srs ? srs.level : 1;
-      if (level === 1) {
+      const level = srs ? srs.level : 0;
+      if (level <= 1) {
         lvl1.push(item);
       } else if (level === 2) {
         lvl2.push(item);
@@ -1106,6 +1113,7 @@ class TagalogVocabApp {
   }
 
   renderCurrentCard() {
+    this.isCardTransitioning = false;
     this.elements.swipeDeck.innerHTML = '';
 
     if (this.cardQueue.length === 0) {
@@ -1129,14 +1137,19 @@ class TagalogVocabApp {
     const isTlDe = (this.state.direction !== 'de-tl' && this.state.direction !== 'de-hr');
     const wordTl = item.tl || item.hr;
     const exTl = item.exampleTl || item.exampleHr;
+    const isFav = this.state.favorites.includes(item.id);
 
     // SRS Level Badge Ermittlung
     const srsItem = (this.state.srs && this.state.srs[item.id]) ? this.state.srs[item.id] : null;
-    const srsLevel = srsItem ? srsItem.level : 1;
-    let srsBadgeText = '🌱 Stufe 1';
+    const srsLevel = srsItem ? (srsItem.level || 0) : 0;
+    let srsBadgeText = '🌱 Neu';
     let srsBadgeClass = 'lvl1';
-    let srsBadgeTitle = 'Neu / Im Training';
-    if (srsLevel === 2) {
+    let srsBadgeTitle = 'Neu (Noch nicht geübt)';
+    if (srsLevel === 1) {
+      srsBadgeText = '🔄 Stufe 1';
+      srsBadgeClass = 'lvl1';
+      srsBadgeTitle = 'In Übung (1x gewusst)';
+    } else if (srsLevel === 2) {
       srsBadgeText = '⚡ Stufe 2';
       srsBadgeClass = 'lvl2';
       srsBadgeTitle = 'Gefestigt (2x gewusst)';
@@ -1159,7 +1172,10 @@ class TagalogVocabApp {
               <span class="card-cat-tag">${catName}</span>
               ${srsBadgeHtml}
             </div>
-            ${isTlDe ? `<button class="card-audio-btn" title="Tagalog anhören" id="card-audio-front">🔊</button>` : ''}
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button class="card-fav-btn ${isFav ? 'active' : ''}" title="Als Favorit merken" data-fav-btn="1">⭐</button>
+              ${isTlDe ? `<button class="card-audio-btn" title="Tagalog anhören" id="card-audio-front">🔊</button>` : ''}
+            </div>
           </div>
 
           <div class="card-center-content">
@@ -1185,7 +1201,10 @@ class TagalogVocabApp {
               <span class="card-cat-tag">${catName}</span>
               ${srsBadgeHtml}
             </div>
-            <button class="card-audio-btn" id="card-audio-back" title="Tagalog anhören">🔊</button>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button class="card-fav-btn ${isFav ? 'active' : ''}" title="Als Favorit merken" data-fav-btn="1">⭐</button>
+              <button class="card-audio-btn" id="card-audio-back" title="Tagalog anhören">🔊</button>
+            </div>
           </div>
 
           <div class="card-center-content">
@@ -1209,6 +1228,25 @@ class TagalogVocabApp {
 
     this.elements.swipeDeck.appendChild(cardEl);
     this.activeCardEl = cardEl;
+
+    // Favorite Buttons auf Vorder- und Rückseite synchronisieren
+    const favBtns = cardEl.querySelectorAll('[data-fav-btn]');
+    if (favBtns && favBtns.length > 0) {
+      favBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const currentlyFav = this.state.favorites.includes(item.id);
+          if (currentlyFav) {
+            this.state.favorites = this.state.favorites.filter(id => id !== item.id);
+          } else {
+            this.state.favorites.push(item.id);
+          }
+          favBtns.forEach(b => b.classList.toggle('active', !currentlyFav));
+          this.playTone('pop');
+          this.saveState();
+        });
+      });
+    }
 
     // Audio Buttons (sprechen immer die Tagalog-Version)
     const audioFront = cardEl.querySelector('#card-audio-front');
@@ -1319,11 +1357,9 @@ class TagalogVocabApp {
       const threshold = 80;
       if (currentX > threshold) {
         // Swiped Right -> ALAM KO NA! (Gekonnt)
-        this.animateCardExit(card, 1);
         this.handleSwipeChoice(true);
       } else if (currentX < -threshold) {
         // Swiped Left -> ULITIN! (Wiederholen)
-        this.animateCardExit(card, -1);
         this.handleSwipeChoice(false);
       } else {
         // Zurück zur Mitte
@@ -1337,7 +1373,7 @@ class TagalogVocabApp {
 
     // Touch events direkt auf der Karte
     card.addEventListener('touchstart', (e) => {
-      if (e.target.closest('button') || e.target.closest('.card-audio-btn')) return;
+      if (e.target.closest('button') || e.target.closest('.card-audio-btn') || e.target.closest('.card-fav-btn')) return;
       const touch = e.touches[0];
       onStart(touch.clientX, touch.clientY);
     }, { passive: true });
@@ -1362,7 +1398,7 @@ class TagalogVocabApp {
 
     // Mouse events für Desktop-Klicks
     card.addEventListener('mousedown', (e) => {
-      if (e.target.closest('button') || e.target.closest('.card-audio-btn')) return;
+      if (e.target.closest('button') || e.target.closest('.card-audio-btn') || e.target.closest('.card-fav-btn')) return;
       onStart(e.clientX, e.clientY);
     });
 
@@ -1376,6 +1412,13 @@ class TagalogVocabApp {
       onEnd();
     };
 
+    if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+      if (this._boundMouseMove) window.removeEventListener('mousemove', this._boundMouseMove);
+      if (this._boundMouseUp) window.removeEventListener('mouseup', this._boundMouseUp);
+    }
+    this._boundMouseMove = onMouseMove;
+    this._boundMouseUp = onMouseUp;
+
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
   }
@@ -1388,7 +1431,8 @@ class TagalogVocabApp {
   }
 
   handleSwipeChoice(isKnown) {
-    if (this.cardQueue.length === 0) return;
+    if (this.cardQueue.length === 0 || this.isCardTransitioning) return;
+    this.isCardTransitioning = true;
 
     if (this.activeCardEl) {
       this.animateCardExit(this.activeCardEl, isKnown ? 1 : -1);
@@ -1396,16 +1440,16 @@ class TagalogVocabApp {
 
     const item = this.cardQueue.shift();
 
-    // SRS Logic
+    // SRS Logic (Stufe 0 -> 1 -> 2 -> 3 bei 3x richtig gewusst)
     if (!this.state.srs[item.id]) {
-      this.state.srs[item.id] = { level: 1, correct: 0, wrong: 0, lastSeen: Date.now() };
+      this.state.srs[item.id] = { level: 0, correct: 0, wrong: 0, lastSeen: Date.now() };
     }
     const srsData = this.state.srs[item.id];
     srsData.lastSeen = Date.now();
 
     if (isKnown) {
       srsData.correct++;
-      srsData.level = Math.min(3, srsData.level + 1);
+      srsData.level = Math.min(3, (srsData.level || 0) + 1);
       this.playTone('know');
       this.addXP(15);
     } else {
@@ -1502,6 +1546,8 @@ class TagalogVocabApp {
     options.forEach(opt => {
       const btn = document.createElement('button');
       btn.className = 'quiz-option-btn';
+      btn.dataset = btn.dataset || {};
+      btn.dataset.optId = String(opt.id);
       const optWordTl = opt.tl || opt.hr;
       const optText = isTlDe ? opt.de : optWordTl;
       btn.innerHTML = `<span>${optText}</span> <span>➜</span>`;
@@ -1574,7 +1620,10 @@ class TagalogVocabApp {
       const targetText = isTlDe ? currentItem.de : wordTl;
 
       allBtns.forEach(b => {
-        if (b.textContent.includes(targetText)) {
+        const isTargetBtn = (b.dataset && b.dataset.optId)
+          ? b.dataset.optId === String(currentItem.id)
+          : b.textContent.includes(targetText);
+        if (isTargetBtn) {
           b.classList.add('timeout-revealed');
           b.innerHTML = `<span>${targetText}</span> <span style="font-size: 11px; opacity: 0.9;">💡 Richtige Lösung</span>`;
         }
@@ -1654,7 +1703,10 @@ class TagalogVocabApp {
       this.playTone('wrong');
       // Highlight correct answer
       allBtns.forEach(b => {
-        if (b.textContent.includes(targetText)) {
+        const isTargetBtn = (b.dataset && b.dataset.optId)
+          ? b.dataset.optId === String(currentItem.id)
+          : b.textContent.includes(targetText);
+        if (isTargetBtn) {
           b.classList.add('correct');
         }
       });
@@ -1686,7 +1738,7 @@ class TagalogVocabApp {
     this.elements.quizOptions.innerHTML = `
       <div style="text-align: center; padding: 20px;">
         <div style="font-size: 36px; margin-bottom: 10px;">🌟</div>
-        <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">Du hast ${this.quizScore} Punkte erzielt!</div>
+        <div style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">Du hast ${this.quizScore} Punkte erzielt!</div>
         <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">Super Leistung für deinen Wortschatz!</p>
         <button class="modal-btn-submit" onclick="app.startQuiz()">Noch eine Runde</button>
       </div>
@@ -1709,7 +1761,7 @@ class TagalogVocabApp {
     if (this.spikaIndex >= this.spikaQueue.length) {
       if (this.elements.spikaScenarioEmoji) this.elements.spikaScenarioEmoji.textContent = "🏆";
       if (this.elements.spikaScenarioTitle) this.elements.spikaScenarioTitle.textContent = "Pinoy-Dialoge gemeistert!";
-      if (this.elements.spikaScenarioDesc) this.elements.spikaScenarioDesc.textContent = `Du hast alle 12 Alltagssituationen gemeistert und ${this.spikaScore} Punkte erzielt! Dein Gespür für authentische Tagalog-Reaktionen ist fabelhaft.`;
+      if (this.elements.spikaScenarioDesc) this.elements.spikaScenarioDesc.textContent = `Du hast alle ${this.spikaQueue.length} Alltagssituationen gemeistert und ${this.spikaScore} Punkte erzielt! Dein Gespür für authentische Tagalog-Reaktionen ist fabelhaft.`;
       if (this.elements.spikaScenarioPrompt) this.elements.spikaScenarioPrompt.textContent = "";
       if (this.elements.spikaOptionsList) {
         this.elements.spikaOptionsList.innerHTML = `
@@ -1812,7 +1864,23 @@ class TagalogVocabApp {
     }
 
     const pool = this.getActiveVocab();
-    const pairsCount = 6;
+    if (!pool || pool.length < 2) {
+      this.matchTiles = [];
+      this.matchTotalPairs = 0;
+      if (this.elements.matchGrid) {
+        this.elements.matchGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 36px 20px; color: var(--text-secondary);">
+            <div style="font-size: 36px; margin-bottom: 10px;">⭐</div>
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Mindestens 2 Vokabeln benötigt</div>
+            <div style="font-size: 13px;">Wähle eine andere Kategorie oder markiere mehr Wörter mit ⭐ als Favorit.</div>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    const pairsCount = Math.min(6, pool.length);
+    this.matchTotalPairs = pairsCount;
     const selectedVocab = [...pool].sort(() => Math.random() - 0.5).slice(0, pairsCount);
 
     const tiles = [];
@@ -1852,7 +1920,8 @@ class TagalogVocabApp {
   }
 
   resumeMatchTimer() {
-    if (this.currentView === 'match' && this.matchedPairsCount < 6) {
+    const targetPairs = this.matchTotalPairs || 6;
+    if (this.currentView === 'match' && this.matchTiles && this.matchTiles.length >= 4 && this.matchedPairsCount < targetPairs) {
       this.startMatchTimer();
     }
   }
@@ -1923,7 +1992,8 @@ class TagalogVocabApp {
       if (tile.type === 'tl' || tile.type === 'hr') this.speakTagalog(tile.text);
       else this.speakTagalog(first.tile.text);
 
-      if (this.matchedPairsCount === 6) {
+      const totalTargetPairs = this.matchTotalPairs || 6;
+      if (this.matchedPairsCount === totalTargetPairs) {
         this.stopMatchTimer();
         const timeSpent = this.matchSeconds;
         let isRecord = false;
@@ -1942,7 +2012,7 @@ class TagalogVocabApp {
         }
 
         setTimeout(() => {
-          alert(`🎉 Alle 6 Paare gematcht in ${timeSpent}s! ${isRecord ? 'Neuer persönlicher Rekord! 🏆' : ''}`);
+          alert(`🎉 Alle ${totalTargetPairs} Paare gematcht in ${timeSpent}s! ${isRecord ? 'Neuer persönlicher Rekord! 🏆' : ''}`);
           this.initMatchGame();
         }, 450);
       }
@@ -1974,6 +2044,7 @@ class TagalogVocabApp {
     let countLearning = 0;
     let countPracticing = 0;
     let countNew = 0;
+    let countFav = 0;
 
     pool.forEach(item => {
       const srs = (this.state.srs && this.state.srs[item.id]) ? this.state.srs[item.id] : null;
@@ -1987,6 +2058,9 @@ class TagalogVocabApp {
       } else {
         countNew++;
       }
+      if (this.state.favorites && this.state.favorites.includes(item.id)) {
+        countFav++;
+      }
     });
 
     // Update filter chip counters
@@ -1995,11 +2069,13 @@ class TagalogVocabApp {
     if (this.elements.dictChipCountLearning) this.elements.dictChipCountLearning.textContent = countLearning;
     if (this.elements.dictChipCountPracticing) this.elements.dictChipCountPracticing.textContent = countPracticing;
     if (this.elements.dictChipCountNew) this.elements.dictChipCountNew.textContent = countNew;
+    if (this.elements.dictChipCountFav) this.elements.dictChipCountFav.textContent = countFav;
 
     // 2. Filter by status filter
     const statusFilter = this.dictStatusFilter || 'all';
     let statusFiltered = pool.filter(item => {
       if (statusFilter === 'all') return true;
+      if (statusFilter === 'fav') return this.state.favorites && this.state.favorites.includes(item.id);
       const srs = (this.state.srs && this.state.srs[item.id]) ? this.state.srs[item.id] : null;
       const lvl = srs ? (srs.level || 0) : 0;
       if (statusFilter === 'mastered') return lvl >= 3;
@@ -2090,26 +2166,58 @@ class TagalogVocabApp {
         <div class="vocab-row-actions">
           <button class="row-action-btn audio-btn" title="Tagalog anhören">🔊</button>
           <button class="row-action-btn star ${isFav ? 'active' : ''}" title="Favorit">⭐</button>
+          ${item.isCustom ? `<button class="row-action-btn delete-btn" title="Eigene Vokabel löschen">🗑️</button>` : ''}
         </div>
       `;
 
       // Audio
-      row.querySelector('.audio-btn').addEventListener('click', () => {
-        this.speakTagalog(wordTl);
-      });
+      const audioBtn = row.querySelector('.audio-btn');
+      if (audioBtn) {
+        audioBtn.addEventListener('click', () => {
+          this.speakTagalog(wordTl);
+        });
+      }
 
       // Favorite
       const starBtn = row.querySelector('.star');
-      starBtn.addEventListener('click', () => {
-        if (this.state.favorites.includes(item.id)) {
-          this.state.favorites = this.state.favorites.filter(id => id !== item.id);
-          starBtn.classList.remove('active');
-        } else {
-          this.state.favorites.push(item.id);
-          starBtn.classList.add('active');
+      if (starBtn) {
+        starBtn.addEventListener('click', () => {
+          if (this.state.favorites.includes(item.id)) {
+            this.state.favorites = this.state.favorites.filter(id => id !== item.id);
+            starBtn.classList.remove('active');
+          } else {
+            this.state.favorites.push(item.id);
+            starBtn.classList.add('active');
+          }
+          this.saveState();
+          const newFavCount = pool.filter(v => this.state.favorites.includes(v.id)).length;
+          if (this.elements.dictChipCountFav) {
+            this.elements.dictChipCountFav.textContent = newFavCount;
+          }
+          if (this.dictStatusFilter === 'fav') {
+            this.renderDictionary(filterQuery);
+          }
+        });
+      }
+
+      // Delete Custom Vocab
+      if (item.isCustom) {
+        const delBtn = row.querySelector('.delete-btn');
+        if (delBtn) {
+          delBtn.addEventListener('click', () => {
+            const confirmed = (typeof window !== 'undefined' && window.confirm)
+              ? window.confirm(`Eigene Vokabel "${wordTl}" wirklich löschen?`)
+              : true;
+            if (confirmed) {
+              this.state.customVocab = this.state.customVocab.filter(v => v.id !== item.id);
+              this.state.favorites = this.state.favorites.filter(id => id !== item.id);
+              delete this.state.srs[item.id];
+              this.saveState();
+              this.renderDictionary(filterQuery);
+            }
+          });
         }
-        this.saveState();
-      });
+      }
 
       this.elements.vocabList.appendChild(row);
     });
@@ -2118,6 +2226,7 @@ class TagalogVocabApp {
   addCustomVocabulary() {
     const tl = this.elements.inputHr.value.trim();
     const de = this.elements.inputDe.value.trim();
+    const cat = (this.elements.inputCat && this.elements.inputCat.value) ? this.elements.inputCat.value : 'slang';
     const exTl = this.elements.inputExHr.value.trim();
     const exDe = this.elements.inputExDe.value.trim();
 
@@ -2128,7 +2237,7 @@ class TagalogVocabApp {
       tl,
       hr: tl,
       de,
-      category: 'slang',
+      category: cat,
       exampleTl: exTl,
       exampleHr: exTl,
       exampleDe: exDe,

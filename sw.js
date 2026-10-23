@@ -1,5 +1,5 @@
 // Service Worker für TagalogVocab - Network-First mit Offline-Cache-Fallback
-const CACHE_VERSION = 'tagalogvocab-v3.1.0';
+const CACHE_VERSION = 'tagalogvocab-v3.2.0';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -60,15 +60,20 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() => {
-        // Kein Internet / Offline: Lade aus dem Cache
+        // Kein Internet / Offline: Lade aus dem Cache (inkl. Fallback ohne Query-String)
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Falls selbst die URL nicht im Cache ist, gib die gecachte index.html zurück
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html') || caches.match('index.html');
-          }
+          return caches.match(event.request, { ignoreSearch: true }).then((fallbackResponse) => {
+            if (fallbackResponse) {
+              return fallbackResponse;
+            }
+            // Falls selbst die URL nicht im Cache ist, gib die gecachte index.html zurück
+            if (event.request.mode === 'navigate') {
+              return caches.match('./index.html') || caches.match('index.html');
+            }
+          });
         });
       })
   );
