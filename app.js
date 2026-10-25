@@ -1546,8 +1546,8 @@ class TagalogVocabApp {
     options.forEach(opt => {
       const btn = document.createElement('button');
       btn.className = 'quiz-option-btn';
-      btn.dataset = btn.dataset || {};
-      btn.dataset.optId = String(opt.id);
+      btn.setAttribute('data-opt-id', String(opt.id));
+      btn._optId = opt.id;
       const optWordTl = opt.tl || opt.hr;
       const optText = isTlDe ? opt.de : optWordTl;
       btn.innerHTML = `<span>${optText}</span> <span>➜</span>`;
@@ -1620,8 +1620,8 @@ class TagalogVocabApp {
       const targetText = isTlDe ? currentItem.de : wordTl;
 
       allBtns.forEach(b => {
-        const isTargetBtn = (b.dataset && b.dataset.optId)
-          ? b.dataset.optId === String(currentItem.id)
+        const isTargetBtn = (b._optId !== undefined)
+          ? b._optId === currentItem.id
           : b.textContent.includes(targetText);
         if (isTargetBtn) {
           b.classList.add('timeout-revealed');
@@ -1703,8 +1703,8 @@ class TagalogVocabApp {
       this.playTone('wrong');
       // Highlight correct answer
       allBtns.forEach(b => {
-        const isTargetBtn = (b.dataset && b.dataset.optId)
-          ? b.dataset.optId === String(currentItem.id)
+        const isTargetBtn = (b._optId !== undefined)
+          ? b._optId === currentItem.id
           : b.textContent.includes(targetText);
         if (isTargetBtn) {
           b.classList.add('correct');

@@ -1,5 +1,5 @@
 // Service Worker für TagalogVocab - Network-First mit Offline-Cache-Fallback
-const CACHE_VERSION = 'tagalogvocab-v3.2.0';
+const CACHE_VERSION = 'tagalogvocab-v3.2.1';
 
 const ASSETS_TO_CACHE = [
   './',
